@@ -12,7 +12,7 @@ from itertools import permutations, combinations
 # from pylab import *
 
 
-__DEBUG = False
+__DEBUG = True
 gl_threshold = 100000
 gl_useratt = ['DUID','PID','DUPERSID','DOBMM','DOBYY','SEX','RACEX','RACEAX','RACEBX','RACEWX','RACETHNX','HISPANX','HISPCAT','EDUCYEAR','Year','marry','income','poverty']
 gl_conditionatt = ['DUID','DUPERSID','ICD9CODX','year']
@@ -30,8 +30,8 @@ gl_plotdata = [[],[],[]]
 gl_treecover = []
 # store coverage of each att according to  dataset
 gl_att_cover = [[],[],[],[],[],[],[],[]]
-# reduce 
-gl_LCA = []
+# count tree root
+gl_count_tree = []
 # Poulis set k=25, m=2 as default!
 
 
@@ -48,35 +48,89 @@ def tran_cmp(node1, node2):
 def expand_tran(tran, cut=None):
     """expand transaction according to generalization cut
     """
+    ex_tran = []
+    # extend t with all parents
+    for temp in tran:
+        for t gl_att_tree[t].parent:
+            if not t.value in ex_tran: 
+                ex_tran.append(t.value)
+    # sort ex_tran
+    sort(ex_tran, key=tran_cmp)
+    if __DEBUG:
+        print ex_tran
     if cut:
-        for cu
-    else:
-        for t in 
-        gl_att_tree
-    return
+        for temp in cut:
+            for t in t.chlid:
+                try:
+                    ex_tran.remove(t.value)
+                except:
+                    pass
+    return ex_tran
+
+
+def init_count_tree():
+    """initialize a new cout tree
+    """
+    # initialize count tree
+    ctree = CountTree()
+    for t in gl_count_tree:
+        CountTree(t, ctree)
+
+
+def check(tran):
+    """check if items can joined with each other
+    """
+
 
 
 def create_count_tree(trans, m):
     """creat a count_tree
     """
+    ctree = init_count_tree()
+    # extend t and insert to count tree
     for t in trans:
-        permutations(t,)
-
-    return
+        ex_t = expand_tran(t)
+        for i in range(1, m+1):
+            temp = permutations(ex_t, i)
+            for t in temp:
+                if check(t):
+                    sort(t, key=tran_cmp)
+                    ctree.add_to_tree(t)
+    return ctree
 
 
 def AA(trans, k=25, m=2):
     """Apriori-based anonymization for transaction anonymization. 
     Developed by Manolis Terrovitis
     """
-    return
+    cut = []
+    for i in range(1, m+1):
+        ctree = ctree = init_count_tree()
+        for t in trans:
+            ex_t = expand_tran(t, cut)
+            temp = permutations(ex_t, i)
+            for t in temp:
+                if check(t):
+                    sort(t, key=tran_cmp)
+                    ctree.add_to_tree(t)
+        # run DA
+
+    return cut
 
 
 def DA(trans, k=25, m=2):
     """Direct anonymization for transaction anonymization.
     Developed by Manolis Terrovitis
     """
-    return
+    cut = []
+    cut_cover = {}
+    ctree = create_count_tree(trans, k, m)
+    for temp in ctree.child:
+        if temp.value in cut_cover:
+            temp.
+        if temp.support < m:
+            pass
+    return cut
 
     
 def read_tree_file(treename):
@@ -113,7 +167,6 @@ def read_tree_file(treename):
     gl_treecover.append(treecover)
     gl_leaf_to_path.append(leaf_to_path)
     gl_att_tree.append(nodelist)
-
     treefile.close()
 
 
@@ -126,7 +179,13 @@ def readtree():
     gl_att_name.append(gl_conditionatt[2])
     for t in gl_att_name:
         read_tree_file(t)
-
+    # creat count tree
+    ctree = []
+    for k, v in gl_att_tree[-1].iteritems():
+        ctree.append(k)
+    sort(ctree, key=tran_cmp)
+    if __DEBUG:
+        print ctree
 
 def readdata():
     """read microda for *.txt and store them in gl_databack"""
@@ -192,6 +251,6 @@ if __name__ == '__main__':
     #read record
     readdata()
     # pdb.set_trace()
-
+    #AA()
     print "Finish RT-Anon based on RMERGE_T\n"
     print "Finish RT-Anonymization!!"
