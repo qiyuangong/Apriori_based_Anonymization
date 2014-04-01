@@ -12,6 +12,8 @@ from itertools import permutations, combinations
 # from pylab import *
 
 
+
+# Poulis set k=25, m=2 as default!
 __DEBUG = True
 gl_threshold = 100000
 gl_useratt = ['DUID','PID','DUPERSID','DOBMM','DOBYY','SEX','RACEX','RACEAX','RACEBX','RACEWX','RACETHNX','HISPANX','HISPCAT','EDUCYEAR','Year','marry','income','poverty']
@@ -32,7 +34,8 @@ gl_treecover = []
 gl_att_cover = [[],[],[],[],[],[],[],[]]
 # count tree root
 gl_count_tree = []
-# Poulis set k=25, m=2 as default!
+# store cut by list
+g_cut = []
 
 
 def tran_cmp(node1, node2):
@@ -54,13 +57,14 @@ def expand_tran(tran, cut=None):
         for t gl_att_tree[t].parent:
             if not t.value in ex_tran: 
                 ex_tran.append(t.value)
+    expand_tran.remove('*')
     # sort ex_tran
     sort(ex_tran, key=tran_cmp)
     if __DEBUG:
         print ex_tran
     if cut:
         for temp in cut:
-            for t in t.chlid:
+            for t in temp.chlid:
                 try:
                     ex_tran.remove(t.value)
                 except:
@@ -77,14 +81,34 @@ def init_count_tree():
         CountTree(t, ctree)
 
 
-def check(tran):
-    """check if items can joined with each other
+def check_overlap(tran):
+    """Check if items can joined with each other
     """
+    len_tran = len(tran)
+    for i in range(len_tran):
+        for j in range(len_tran):
+            if i == j:
+                continue
+            if tran[i] in gl_leaf_to_path[tran[j]]:
+                return False
+    return True
 
+def check_cover(tran, cut):
+    """Check if tran if covered by cut
+    return True if covered, False if not
+    """
+    for temp in tran:
+        ancestor = gl_leaf_to_path[temp]
+        for t in cut:
+            if t in ancestor:
+                break
+        else:
+            return True
+    return False
 
 
 def create_count_tree(trans, m):
-    """creat a count_tree
+    """Creat a count_tree
     """
     ctree = init_count_tree()
     # extend t and insert to count tree
@@ -93,10 +117,53 @@ def create_count_tree(trans, m):
         for i in range(1, m+1):
             temp = permutations(ex_t, i)
             for t in temp:
-                if check(t):
+                if check_overlap(t):
                     sort(t, key=tran_cmp)
                     ctree.add_to_tree(t)
     return ctree
+
+
+def get_cut(tran, ctree, k):
+    """Given a tran, return cut making it k-anonymity with mini information
+    return cut is a string e.g. 'AB'
+    """
+    ancestor = []
+    cut = []
+    # get all ancestors
+    for t in tran:
+        parents = gl_att_tree[t].parent[:]
+        parents.append(gl_att_tree[t])
+        for p in parents:
+            if not p.value in ancestor:
+                ancestor.append(p.value)
+    # generate all possible cut for tran
+    len_ance = len(ancestor)
+    for i in range(len_ance):
+        temp = permutations(ancestor, i)
+        # remove combination with overlap
+        for t in temp:
+            if check_overlap(t) == False:
+                remove t
+        cut.extend(temp)
+    # remove cut cannot cover tran
+    for t in cut:
+        if check_cover(tran, t):
+            remove t
+    # sort by support, the same effect as sorting by NCP
+    sort(cut, key=tran_cmp)
+    if __DEBUG:
+        print cut
+    # return 
+    for t in cut:
+        if t >= k:
+            return t
+
+
+def merge_cut(cut, new_cut):
+    for t in new_cut:
+        if not t in cut:
+            cut.append(t)
+    return cut
 
 
 def AA(trans, k=25, m=2):
@@ -110,27 +177,40 @@ def AA(trans, k=25, m=2):
             ex_t = expand_tran(t, cut)
             temp = permutations(ex_t, i)
             for t in temp:
-                if check(t):
+                if check_overlap(t):
                     sort(t, key=tran_cmp)
                     ctree.add_to_tree(t)
         # run DA
-
+        new_cut = DA(ctree, k, i)
+        merge_cut(cut, new_cut)
     return cut
+
+def R_DA(ctree, k=25, m=2):
+    """Recursively get gl_cut.
+    """
+    global gl_cut
+    if check_cover(ctree.value):
+        return
+    if len(ctree.child):
+        for temp in ctree.child:
+            R_DA(temp, k, m):
+    else:
+        if ctree.support < k:
+            new_cut = get_cut(ctree.prefix+ctree.value)
+            merge_cut(gl_cut, new_cut)
+            return
 
 
 def DA(trans, k=25, m=2):
     """Direct anonymization for transaction anonymization.
     Developed by Manolis Terrovitis
     """
-    cut = []
+    global gl_cut
     cut_cover = {}
     ctree = create_count_tree(trans, k, m)
-    for temp in ctree.child:
-        if temp.value in cut_cover:
-            temp.
-        if temp.support < m:
-            pass
-    return cut
+    gl_cut = []
+    R_DA(ctree, k, m)
+    return gl_cut[:]
 
     
 def read_tree_file(treename):
