@@ -8,9 +8,10 @@ class GenTree(object):
     Store tree node in instances.
     self.value: node value
     self.level: tree level (top is 0)
+    self.support: support
     self.parent: ancestor node list
     self.child: successor node list
-    self.support: support 
+    self.cover: leaf values cover by node
     """
 
     def __init__(self, value = None, parent = None):
@@ -20,7 +21,7 @@ class GenTree(object):
         self.parent = []
         self.child = []
         # range is for ARE, all possible values are in range
-        self.support = []
+        self.cover = []
         if value != None:
             self.value = value
         if parent != None:
@@ -40,16 +41,16 @@ class GenTree(object):
             for tn in child:
                 return child.node(value)
 
-    def getsupport(self):
+    def compute_support(self):
         """compute the tree's support, and store in their var support
         """
         if len(self.child) != 0:
             for t in self.child:
-                self.support = self.support + t.getsupport()
-                self.support.extend(t.support)
+                self.support = self.support + t.compute_support()
+                self.cover.extend(t.cover)
         else:
             self.support = 1
-            self.support.append(self.value)
+            self.cover.append(self.value)
         return self.support
 
 
@@ -71,9 +72,8 @@ class CountTree(object):
         self.support = 0
         self.parent = []
         self.child = []
-        self.prefix = ''
-        # range is for ARE, all possible values are in range
-        self.support = []
+        self.prefix = []
+        self.cover = []
         if value != None:
             self.value = value
         if parent != None:
@@ -93,40 +93,45 @@ class CountTree(object):
             for tn in child:
                 return child.node(value)
 
-    def add_to_tree(self, tran, prefix=''):
+    def add_to_tree(self, tran, prefix=[]):
         """Add combiation to count tree, add prefix to node
         """
-        if len(prefix) >= 1 and self.prefix != '':
-            self.prefix = prefix
+        if len(prefix) >= 1 and len(self.prefix) == 0:
+            self.prefix = prefix[:]
         index = 0
         len_tran = len(tran)
-        for i, t in enumerate(self.child):
+        for index, t in enumerate(self.child):
             if t.value == tran[0]:
                 break
         else:
             self.child.append(CountTree(tran[0]))
-        index = i
+            index = 0
+        next_prefix = prefix[:]
+        next_prefix.append(tran[0])
+        if self.level > 0:
+            self.value = tran[0]
         if len_tran > 1:
-            self.child[index].add_to_tree(tran[1:], prefix+t[0])
+            self.child[index].add_to_tree(tran[1:], next_prefix)
         else:
             self.child[index].support += 1
-            self.child[index].prefix = prefix + tran
- 
-    def getsupport(self, tran):
-        """Get support of tran by query count tree
+            self.child[index].prefix = next_prefix
+
+
+    def print_tree(self, print_matrix=[]):
+        """print count tree
         """
-        index = 0
-        len_tran = len(tran)
-        for i, t in enumerate(self.child):
-            if t.value == tran[0]:
-                break
+        if self.level >= len(print_matrix):
+            print_matrix.append([])
+        if len(self.child) == 0:
+            print_matrix[self.level].append(self.value)
         else:
-            self.child.append(CountTree(tran[0]))
-        index = i
-        if len_tran > 1:
-            return self.child[index].getsupport(tran[1:])
-        else:
-            return self.child[index].support
+            for t in self.child:
+                t.print_tree(print_matrix)
+
+        if self.level == 0:
+            for i in range(len(print_matrix)):
+                for j in range(len(print_matrix[i])):
+                    print print_matrix[i][j],
 
 
 if __name__ == '__main__':
