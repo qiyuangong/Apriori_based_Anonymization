@@ -71,8 +71,9 @@ def expand_tran(tran, cut=None):
     ex_tran.remove('*')
     # sort ex_tran
     ex_tran.sort(cmp=tran_cmp, reverse=True)
-    if __DEBUG:
+    """if __DEBUG:
         print ex_tran
+    """
     if cut:
         for temp in ex_tran:
             ancestor = [parent.value for parent in gl_att_tree[-1][temp].parent]
@@ -199,11 +200,11 @@ def R_DA(ctree, cut, k=25, m=2):
         for temp in ctree.child:
             new_cut = R_DA(temp, cut, k, m)
             merge_cut(cut, new_cut)
-        return cut
     elif ctree.level >= 1 and ctree.support < k:
         tran = ctree.prefix[:]
         tran.append(ctree.value)
         return get_cut(tran, ctree, k)
+    return cut
 
 
 def DA(trans, k=25, m=2):
