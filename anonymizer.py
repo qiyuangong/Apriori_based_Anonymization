@@ -187,6 +187,28 @@ def merge_cut(cut, new_cut):
     for t in new_cut:
         if not t in cut:
             cut.append(t)
+    # merge coverd and overlaped
+    cut.sort(cmp=tran_cmp, reverse=True)
+    delete_list = []
+    len_cut = len(cut)
+    for i in range(len_cut):
+        temp = cut[i]
+        check_list = []
+        for j in range(i, len_cut):
+            t = cut[j]
+            ancestor = [parent.value for parent in gl_att_tree[-1][t].parent]
+            if temp in ancestor:
+                check_list.append(t)
+        child_list = [child.value for child in gl_att_tree[-1][temp].child]
+        for c in child_list:
+            if not c in check_list:
+                delete_list.extend(check_list)
+                break
+        else:
+            delete_list.append(temp)
+    delete_list = list(set(delete_list))
+    for t in delete_list:
+        cut.remove(t)
     return cut
 
 
