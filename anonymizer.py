@@ -265,8 +265,22 @@ def AA(trans, k=25, m=2):
     return cut
 
 
-def trans_gen(tran, cut):
-    return
+def trans_gen(trans, cut):
+    """Generalize transaction according to ger cut
+    """
+    gen_trans = []
+    for tran in trans:
+        gen_tran = []
+        for t in tran:
+            ancestor = [parent.value for parent in gl_att_tree[-1][t].parent]
+            for c in cut:
+                if c in ancestor:
+                    gen_tran.append(c)
+                else:
+                    gen_tran.append(t)
+        gen_trans.append(list(set(gen_tran)))
+    return gen_trans
+
 
 # read files    
 def read_tree_file(treename):
@@ -386,11 +400,13 @@ if __name__ == '__main__':
     readtree()
     #read record
     readdata()
-    cut = AA([row[-1] for row in gl_databack[:]])
+    trans = [row[-1] for row in gl_databack[:]]
+    cut = AA(trans)
     print "Final Cut"
     print cut
-
+    result = trans_gen(trans, cut)
+    if __DEBUG:
+        print result
     # pdb.set_trace()
     #AA()
-    print "Finish RT-Anon based on RMERGE_T\n"
-    print "Finish RT-Anonymization!!"
+    print "Finish T-Anonymization!!"
