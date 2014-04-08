@@ -317,15 +317,10 @@ def read_tree_file(treename):
     treefile.close()
 
 
-def readtree():
-    """read tree from data/tree_*.txt, store them in gl_att_tree"""
-    global gl_att_name, gl_count_tree
-    print "Reading Tree"
-    for t in gl_attlist:
-        gl_att_name.append(gl_useratt[t])
-    gl_att_name.append(gl_conditionatt[2])
-    for t in gl_att_name:
-        read_tree_file(t)
+def init_gl_count_tree():
+    """Init count tree order according to generalizaiton hierarchy
+    """
+    global gl_count_tree
     # creat count tree
     gl_count_tree = []
     for k, v in gl_att_tree[-1].iteritems():
@@ -335,6 +330,18 @@ def readtree():
     gl_count_tree.sort(cmp=tran_cmp, reverse=True)
     if __DEBUG:
         print gl_count_tree
+
+
+def readtree():
+    """read tree from data/tree_*.txt, store them in gl_att_tree"""
+    global gl_att_name
+    print "Reading Tree"
+    for t in gl_attlist:
+        gl_att_name.append(gl_useratt[t])
+    gl_att_name.append(gl_conditionatt[2])
+    for t in gl_att_name:
+        read_tree_file(t)
+    init_gl_count_tree()
 
 
 def readdata():
@@ -405,7 +412,7 @@ if __name__ == '__main__':
     print "Final Cut"
     print cut
     result = trans_gen(trans, cut)
-    if __DEBUG:
+    if __DEBUG: 
         print result
     # pdb.set_trace()
     #AA()

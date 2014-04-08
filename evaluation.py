@@ -1,3 +1,17 @@
+def NCP(gen_tran, att_tree):
+    """Compute NCP (Normalized Certainty Penalty) 
+    when generate record to middle.
+    """
+    ncp = 0.0
+    # exclude SA values(last one type [])
+    for i in range(len(gen_tran) - 1):
+        # if support of numerator is 1, then NCP is 0
+        if att_tree[gen_tran[i]].support == 1:
+            continue
+        ncp +=  att_tree[gen_tran[i]].support * 1.0 / att_tree['*'].support
+    return ncp
+
+
 def count_query(data, att_select, value_select):
     "input query att_select and value_select,return count()"
     count = 0
@@ -23,17 +37,19 @@ def count_query(data, att_select, value_select):
     return count
 
 
-def cluster_to_list(clusters):
-    datalist = []
-    for t in clusters:
-        # relational generalization
-        for i in range(len(t.member)):
-            datalist.add(t.middle)
-        
-        # transactional generalization
+def trans_to_cover(trans, att_tree):
+    """Convert generated transactions to transaction cover 
+    """
+    c_trans = []
+    for tran in trans:
+        temp = []
+        for t in tran:
+            if len(att_tree[t].child) > 0:
+                temp.extend(att_tree[t].cover)
+            else:
+                temp.append(t)
+        c_trans.append(temp)
 
-    return datalist
-    
 
 def average_relative_error(data, result, qd=2, s=5):
     "return average relative error of anonmized microdata,qd denote the query dimensionality, b denot seleciton of query"
