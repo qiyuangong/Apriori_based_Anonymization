@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #coding=utf-8
-
+import pdb
 # logic tree
 class GenTree(object):
 
@@ -73,25 +73,34 @@ class CountTree(object):
         self.parent = []
         self.child = []
         self.prefix = []
-        self.cover = []
         if value != None:
             self.value = value
         if parent != None:
             self.parent = parent.parent[:]
             self.parent.insert(0, parent)
+            if parent.value != '*':
+                self.prefix = parent.prefix[:]
+            self.prefix.append(value)
             parent.child.append(self)
             self.level = parent.level + 1
 
-    def node(self, value):
-        """Search tree with value, return GenTree node.
-        If value == node value, return node. 
-        If value != node value, recurse search.
+    def node(self, tran, prefix=[]):
+        """Search tree with value, return cut tree node.
         """
-        if self.value == value:
-            return self
+        index = 0
+        len_tran = len(tran)
+        for index, t in enumerate(self.child):
+            if t.value == tran[0]:
+                break
         else:
-            for tn in child:
-                return child.node(value)
+            print "Error can not find node"
+            index = 0
+        next_prefix = prefix[:]
+        next_prefix.append(tran[0])
+        if len_tran > 1:
+            return self.child[index].node(tran[1:], next_prefix)
+        else:
+            return self.child[index] 
 
     def add_to_tree(self, tran, prefix=[]):
         """Add combiation to count tree, add prefix to node
@@ -104,18 +113,15 @@ class CountTree(object):
             if t.value == tran[0]:
                 break
         else:
-            self.child.append(CountTree(tran[0]))
-            index = 0
+            CountTree(tran[0], self)
+            index = -1
         next_prefix = prefix[:]
         next_prefix.append(tran[0])
-        if self.level > 0:
-            self.value = tran[0]
         if len_tran > 1:
             self.child[index].add_to_tree(tran[1:], next_prefix)
         else:
             self.child[index].support += 1
             self.child[index].prefix = next_prefix
-
 
     def print_tree(self, print_matrix=[]):
         """print count tree

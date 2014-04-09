@@ -8,7 +8,7 @@ import pdb
 import sys
 from ftp_upload import ftpupload
 import socket
-from itertools import permutations, combinations
+from itertools import combinations
 # from pylab import *
 
 
@@ -56,7 +56,7 @@ def cut_cmp(cut1, cut2):
     if support1 != support2:
         return support1 - support2
     else:
-        return (node1 > node2)    
+        return (cut1 > cut2)    
 
 
 def expand_tran(tran, cut=None):
@@ -71,9 +71,8 @@ def expand_tran(tran, cut=None):
     ex_tran.remove('*')
     # sort ex_tran
     ex_tran.sort(cmp=tran_cmp, reverse=True)
-    """if __DEBUG:
+    if __DEBUG:
         print ex_tran
-    """
     if cut:
         for temp in ex_tran:
             ancestor = [parent.value for parent in gl_att_tree[-1][temp].parent]
@@ -95,6 +94,7 @@ def init_count_tree():
 
 def check_overlap(tran):
     """Check if items can joined with each other
+    return True if overlapped, False if not
     """
     len_tran = len(tran)
     for i in range(len_tran):
@@ -113,15 +113,15 @@ def check_cover(tran, cut):
     """
     if len(cut) == 0:
         return False
-
     for temp in tran:
         ancestor = [parent.value for parent in gl_att_tree[-1][temp].parent]
+        ancestor.append(temp)
         for t in cut:
             if t in ancestor:
                 break
         else:
-            return True
-    return False
+            return False
+    return True
 
 
 def create_count_tree(trans, m):
@@ -132,7 +132,7 @@ def create_count_tree(trans, m):
     for tran in trans:
         ex_t = expand_tran(tran)
         for i in range(1, m+1):
-            temp = permutations(ex_t, i)
+            temp = combinations(ex_t, i)
             # convet tuple to list
             temp = [list(combination) for combination in temp]
             for t in temp:
@@ -142,12 +142,14 @@ def create_count_tree(trans, m):
     return ctree
 
 
-def get_cut(tran, ctree, k):
+def get_cut(ctree, k):
     """Given a tran, return cut making it k-anonymity with mini information
     return cut is a list e.g. ['A', 'B']
     """
     ancestor = []
     cut = []
+    c_root = ctree.parent[-1]
+    tran = ctree.prefix[:]
     # get all ancestors
     for t in tran:
         parents = gl_att_tree[-1][t].parent[:]
@@ -159,31 +161,41 @@ def get_cut(tran, ctree, k):
     # generate all possible cut for tran
     len_ance = len(ancestor)
     for i in range(1, len_ance+1):
-        temp = permutations(ancestor, i)
+        temp = combinations(ancestor, i)
         # convet tuple to list
         temp = [list(combination) for combination in temp]
         # remove combination with overlap
         for t in temp:
             if check_overlap(t) == False:
-                del t
+                pass  
             elif len(t):
                 cut.append(t)
     # remove cut cannot cover tran
-    for t in cut:
+    temp = cut[:]
+    cut = []
+    for t in temp:
         if check_cover(tran, t):
-            del t
+            cut.append(t) 
     # sort by support, the same effect as sorting by NCP
     # pdb.set_trace()
     cut.sort(cmp=cut_cmp)
+    for t in cut:
+        t.sort(cmp=tran_cmp, reverse=True)
     if __DEBUG:
-        print cut
+        print "tran %s" % tran
     # return 
     for t in cut:
-        if t >= k:
+        if c_root.node(t).support >= k:
+            if __DEBUG:
+                print "cut %s" % t
             return t
+    print "Error: Can not find cut for %s" % tran
+    # pdb.set_trace()
 
 
 def merge_cut(cut, new_cut):
+    if new_cut == None:
+        return cut
     for t in new_cut:
         if not t in cut:
             cut.append(t)
@@ -222,10 +234,8 @@ def R_DA(ctree, cut, k=25, m=2):
         for temp in ctree.child:
             new_cut = R_DA(temp, cut, k, m)
             merge_cut(cut, new_cut)
-    elif ctree.level >= 1 and ctree.support < k:
-        tran = ctree.prefix[:]
-        tran.append(ctree.value)
-        return get_cut(tran, ctree, k)
+    elif ctree.level >= 1 and ctree.support < k and ctree.support > 0:
+        return get_cut(ctree, k)
     return cut
 
 
@@ -237,7 +247,6 @@ def DA(trans, k=25, m=2):
     ctree = create_count_tree(trans, m)
     if __DEBUG:
         print "Cut Tree"
-        ctree.print_tree
     cut = []
     R_DA(ctree, cut, k, m)
     return cut[:]
@@ -252,13 +261,14 @@ def AA(trans, k=25, m=2):
         ctree = init_count_tree()
         for t in trans:
             ex_t = expand_tran(t, cut)
-            temp = permutations(ex_t, i)
+            temp = combinations(ex_t, i)
             # convet tuple to list
             temp = [list(t) for t in temp]
             for t in temp:
                 if check_overlap(t):
                     t.sort(cmp=tran_cmp, reverse=True)
                     ctree.add_to_tree(t)
+        pdb.set_trace()
         # run DA
         new_cut = R_DA(ctree, cut, k, i)
         merge_cut(cut, new_cut)
@@ -328,8 +338,6 @@ def init_gl_count_tree():
     # delete *, and sort reverse
     gl_count_tree.remove('*')
     gl_count_tree.sort(cmp=tran_cmp, reverse=True)
-    if __DEBUG:
-        print gl_count_tree
 
 
 def readtree():
@@ -412,8 +420,6 @@ if __name__ == '__main__':
     print "Final Cut"
     print cut
     result = trans_gen(trans, cut)
-    if __DEBUG: 
-        print result
     # pdb.set_trace()
     #AA()
     print "Finish T-Anonymization!!"
