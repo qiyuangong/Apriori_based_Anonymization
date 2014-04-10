@@ -21,7 +21,7 @@ class GenTree(object):
         self.parent = []
         self.child = []
         # range is for ARE, all possible values are in range
-        self.cover = []
+        self.cover = {}
         if value != None:
             self.value = value
         if parent != None:
@@ -29,30 +29,17 @@ class GenTree(object):
             self.parent.insert(0, parent)
             parent.child.append(self)
             self.level = parent.level + 1
+            for t in self.parent:
+                t.support += 1
+                t.cover[self.value] = self
+
 
     def node(self, value):
         """Search tree with value, return GenTree node.
         If value == node value, return node. 
         If value != node value, recurse search.
         """
-        if self.value == value:
-            return self
-        else:
-            for tn in child:
-                return child.node(value)
-
-    def compute_support(self):
-        """compute the tree's support, and store in their var support
-        """
-        if len(self.child) != 0:
-            for t in self.child:
-                self.support = self.support + t.compute_support()
-                self.cover.extend(t.cover)
-        else:
-            self.support = 1
-            self.cover.append(self.value)
-        return self.support
-
+        return self.cover[value]
 
 class CountTree(object):
 
@@ -78,8 +65,7 @@ class CountTree(object):
         if parent != None:
             self.parent = parent.parent[:]
             self.parent.insert(0, parent)
-            if parent.value != '*':
-                self.prefix = parent.prefix[:]
+            self.prefix = parent.prefix[:]
             self.prefix.append(value)
             parent.child.append(self)
             self.level = parent.level + 1
@@ -105,8 +91,6 @@ class CountTree(object):
     def add_to_tree(self, tran, prefix=[]):
         """Add combiation to count tree, add prefix to node
         """
-        if len(prefix) >= 1 and len(self.prefix) == 0:
-            self.prefix = prefix[:]
         index = 0
         len_tran = len(tran)
         for index, t in enumerate(self.child):
@@ -121,24 +105,10 @@ class CountTree(object):
             self.child[index].add_to_tree(tran[1:], next_prefix)
         else:
             self.child[index].support += 1
-            self.child[index].prefix = next_prefix
 
-    def print_tree(self, print_matrix=[]):
-        """print count tree
+    def print_tree(self):
+        """print node and its direct children in count tree 
         """
-        if self.level >= len(print_matrix):
-            print_matrix.append([])
-        if len(self.child) == 0:
-            print_matrix[self.level].append(self.value)
-        else:
-            for t in self.child:
-                t.print_tree(print_matrix)
-
-        if self.level == 0:
-            for i in range(len(print_matrix)):
-                for j in range(len(print_matrix[i])):
-                    print print_matrix[i][j],
-
-
-if __name__ == '__main__':
-    print 'OK'
+        print "prefix %s" % self.prefix
+        for t in self.child:
+            print t.value,

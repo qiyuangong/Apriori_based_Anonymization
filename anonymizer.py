@@ -2,19 +2,15 @@
 #coding=utf-8
 
 from generalization import GenTree, CountTree
-from datetime import datetime
 from random import randrange
 import pdb
 import sys
 from ftp_upload import ftpupload
 import socket
 from itertools import combinations
-# from pylab import *
-
-
 
 # Poulis set k=25, m=2 as default!
-__DEBUG = False
+__DEBUG = True
 gl_threshold = 100000
 gl_useratt = ['DUID','PID','DUPERSID','DOBMM','DOBYY','SEX','RACEX','RACEAX','RACEBX','RACEWX','RACETHNX','HISPANX','HISPCAT','EDUCYEAR','Year','marry','income','poverty']
 gl_conditionatt = ['DUID','DUPERSID','ICD9CODX','year']
@@ -25,9 +21,6 @@ gl_attlist = [3,4,5,6,13,15,16]
 gl_att_tree = []
 # databack store all reacord for dataset
 gl_databack = []
-# store data for python plot
-gl_plotdata = [[],[],[]]
-gl_treecover = []
 # store coverage of each att according to  dataset
 gl_att_cover = [[],[],[],[],[],[],[],[]]
 # count tree root
@@ -35,7 +28,9 @@ gl_count_tree = []
 
 
 def tran_cmp(node1, node2):
-    """Compare node1 (str) and node2 (str)"""
+    """Compare node1 (str) and node2 (str)
+    Compare two nodes according to their support
+    """
     support1 = gl_att_tree[-1][node1].support
     support2 = gl_att_tree[-1][node2].support
     if support1 != support2:
@@ -46,6 +41,7 @@ def tran_cmp(node1, node2):
 
 def cut_cmp(cut1, cut2):
     """Compare cut1 (list) and cut2 (list)
+    Compare two cut according to their sum of node support
     """
     support1 = 0
     support2 = 0
@@ -72,7 +68,8 @@ def expand_tran(tran, cut=None):
     # sort ex_tran
     ex_tran.sort(cmp=tran_cmp, reverse=True)
     if __DEBUG:
-        print ex_tran
+        print "tran %s " % tran
+        print "ex_tran %s" % ex_tran
     if cut:
         for temp in ex_tran:
             ancestor = [parent.value for parent in gl_att_tree[-1][temp].parent]
@@ -102,9 +99,10 @@ def check_overlap(tran):
             if i == j:
                 continue
             ancestor = [parent.value for parent in gl_att_tree[-1][tran[j]].parent]
+            ancestor.append(tran[j])
             if tran[i] in ancestor:
-                return False
-    return True
+                return True
+    return False
 
 
 def check_cover(tran, cut):
@@ -125,7 +123,7 @@ def check_cover(tran, cut):
 
 
 def create_count_tree(trans, m):
-    """Creat a count_tree
+    """Creat a count_tree for DA
     """
     ctree = init_count_tree()
     # extend t and insert to count tree
@@ -136,7 +134,7 @@ def create_count_tree(trans, m):
             # convet tuple to list
             temp = [list(combination) for combination in temp]
             for t in temp:
-                if check_overlap(t):
+                if not check_overlap(t):
                     t.sort(cmp=tran_cmp, reverse=True)
                     ctree.add_to_tree(t)
     return ctree
@@ -166,9 +164,7 @@ def get_cut(ctree, k):
         temp = [list(combination) for combination in temp]
         # remove combination with overlap
         for t in temp:
-            if check_overlap(t) == False:
-                pass  
-            elif len(t):
+            if not check_overlap(t) and len(t):
                 cut.append(t)
     # remove cut cannot cover tran
     temp = cut[:]
@@ -181,19 +177,22 @@ def get_cut(ctree, k):
     cut.sort(cmp=cut_cmp)
     for t in cut:
         t.sort(cmp=tran_cmp, reverse=True)
-    if __DEBUG:
-        print "tran %s" % tran
     # return 
     for t in cut:
         if c_root.node(t).support >= k:
             if __DEBUG:
+                print "tran %s" % tran
                 print "cut %s" % t
             return t
+    # Well, Terrovitis don't metion this sitituation. I suggest suppress them.
     print "Error: Can not find cut for %s" % tran
     # pdb.set_trace()
 
 
 def merge_cut(cut, new_cut):
+    """Merge new_cut to cut to form a stronger cut
+    return cut cover both of them
+    """
     if new_cut == None:
         return cut
     for t in new_cut:
@@ -205,19 +204,11 @@ def merge_cut(cut, new_cut):
     len_cut = len(cut)
     for i in range(len_cut):
         temp = cut[i]
-        check_list = []
         for j in range(i, len_cut):
             t = cut[j]
             ancestor = [parent.value for parent in gl_att_tree[-1][t].parent]
             if temp in ancestor:
-                check_list.append(t)
-        child_list = [child.value for child in gl_att_tree[-1][temp].child]
-        for c in child_list:
-            if not c in check_list:
-                delete_list.extend(check_list)
-                break
-        else:
-            delete_list.append(temp)
+                delete_list.append(t)
     delete_list = list(set(delete_list))
     for t in delete_list:
         cut.remove(t)
@@ -243,11 +234,10 @@ def DA(trans, k=25, m=2):
     """Direct anonymization for transaction anonymization.
     Developed by Manolis Terrovitis
     """
-    cut_cover = {}
+    cut = []
     ctree = create_count_tree(trans, m)
     if __DEBUG:
         print "Cut Tree"
-    cut = []
     R_DA(ctree, cut, k, m)
     return cut[:]
 
@@ -265,7 +255,7 @@ def AA(trans, k=25, m=2):
             # convet tuple to list
             temp = [list(t) for t in temp]
             for t in temp:
-                if check_overlap(t):
+                if not check_overlap(t):
                     t.sort(cmp=tran_cmp, reverse=True)
                     ctree.add_to_tree(t)
         pdb.set_trace()
@@ -295,9 +285,7 @@ def trans_gen(trans, cut):
 # read files    
 def read_tree_file(treename):
     """read tree data from treename"""
-    global gl_treecover
     global gl_att_tree
-
     treecover = 0
     leaf_to_path = {}
     nodelist = {}
@@ -319,10 +307,8 @@ def read_tree_file(treename):
             if not t in nodelist:
                 # always satisfy 
                 nodelist[t] = GenTree(t, nodelist[temp[i - 1]])
-    treecover = nodelist['*'].compute_support()
     if __DEBUG:
         print "Nodes No. = %d" % treecover
-    gl_treecover.append(treecover)
     gl_att_tree.append(nodelist)
     treefile.close()
 
@@ -404,8 +390,6 @@ def readdata():
             hashdata[k].append(temp)
     for k, v in hashdata.iteritems():
         gl_databack.append(v)
-    # pdb.set_trace()
-    # num_analysis([t[6] for t in gl_databack[:]])
     userfile.close()
     conditionfile.close()
 
@@ -416,10 +400,12 @@ if __name__ == '__main__':
     #read record
     readdata()
     trans = [row[-1] for row in gl_databack[:]]
+    # remove duplicate items
+    for i in range(len(trans)):
+        trans[i] = list(set(trans[i]))
     cut = DA(trans)
+    # cut = AA(trans)
     print "Final Cut"
     print cut
     result = trans_gen(trans, cut)
-    # pdb.set_trace()
-    #AA()
     print "Finish T-Anonymization!!"
