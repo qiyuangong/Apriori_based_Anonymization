@@ -1,3 +1,5 @@
+import pdb
+
 def NCP(gen_tran, att_tree):
     """Compute NCP (Normalized Certainty Penalty) 
     when generate record to middle.
@@ -51,24 +53,14 @@ def trans_to_cover(trans, att_tree):
         c_trans.append(temp)
 
 
-def average_relative_error(data, result, qd=2, s=5):
+def average_relative_error(att_tree, data, result, qd=2, s=5):
     "return average relative error of anonmized microdata,qd denote the query dimensionality, b denot seleciton of query"
-    global att_cover
     are = 0.0
-    lenresult = len(result)
-    transform_result = []
+    len_att = len(att_tree)
     blist = []
     seed = math.pow(s*1.0/100, 1.0/(qd +1))
-    for i in range(8):
-        blist.append(math.ceil(len(att_cover[i]) * seed))
-    for i in range(lenresult):
-        temp = anatomy_transform(result[i])
-
-
-
-        # pdb.set_trace()
-        transform_result.extend(temp)
-
+    for i in range(len_att):
+        blist.append(math.ceil(att_tree[i].support) * seed))
     num = 100
     zeroare = 0
     # pdb.set_trace()
@@ -100,7 +92,7 @@ def average_relative_error(data, result, qd=2, s=5):
                 count += 1
             value_select.append(temp)
         acout = count_query(data, att_select, value_select)
-        rcout = count_query(transform_result, att_select, value_select)
+        rcout = count_query(result, att_select, value_select)
         if acout != 0:
             are += abs(acout - rcout) * 1.0 / acout
         else:
