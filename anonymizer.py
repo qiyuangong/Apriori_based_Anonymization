@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #coding=utf-8
-from AA import AA, DA, trans_gen
+from Apriori_based_Anon import Apriori_based_Anon
 from read_data import readdata, readtree
 # Poulis set k=25, m=2 as default!
 
@@ -9,13 +9,15 @@ if __name__ == '__main__':
     att_tree = readtree()
     #read record
     data = readdata()
-    trans = [row[-1] for row in data[:]]
+    # init AA
+    aa = Apriori_based_Anon(att_tree[-1])
+    trans = [row[-1] for row in data[:200]]
     # remove duplicate items
     for i in range(len(trans)):
         trans[i] = list(set(trans[i]))
-    cut = DA(att_tree[-1], trans)
-    # cut = AA(att_tree[-1], trans)
+    # cut = aa.DA(trans)
+    cut = aa.AA(trans)
     print "Final Cut"
     print cut
-    result = trans_gen(trans, cut)
+    result = aa.trans_gen(trans, cut)
     print "Finish T-Anonymization!!"
