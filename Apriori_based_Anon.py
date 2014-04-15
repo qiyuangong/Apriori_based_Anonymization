@@ -12,7 +12,7 @@ import socket
 from itertools import combinations
 
 
-__DEBUG = True
+__DEBUG = False
 # QI number
 # att_tree store root node for each att
 gl_att_tree = []

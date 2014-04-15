@@ -1,4 +1,10 @@
+# from pylab import *
 import pdb
+import math
+import random
+
+
+_DEBUG = True
 
 def NCP(gen_tran, att_tree):
     """Compute NCP (Normalized Certainty Penalty) 
@@ -14,93 +20,100 @@ def NCP(gen_tran, att_tree):
     return ncp
 
 
+def get_cover(att_tree, node):
+    """
+    Transform generlized value to coverage( list)
+    """
+    if not isinstance(node, list):
+        return att_tree[node].cover
+    cover = []
+    for t in node:
+        cover.extend(get_cover(att_tree, t))
+    return cover
+
+
+
+def gen_to_cover(att_trees, result):
+    """
+    Transform generlized result set to coverage result set
+    """
+    gen_cover = []
+    for t in result:
+        temp = []
+        for i in range(len(t)):
+            temp.append(get_cover(att_trees[i], t[i]))
+        gen_cover.append(temp)
+    return gen_cover
+
+
 def count_query(data, att_select, value_select):
     "input query att_select and value_select,return count()"
     count = 0
     lenquery = len(att_select)
-    for temp in data:
+    for record in data:
         for i in range(lenquery):
             index = att_select[i]
-            # value(list) and temp[index](value)
             value = value_select[i]
-            if index != 7:
-                if not temp[index] in value:
+            flag = False
+            for t in value:
+                if t in record[index]:
+                    flag = True
                     break
-            else:
-                # gen value
-                flag = False
-                for t in value:
-                    if t in temp[index]:
-                        flag = True
-                if not flag:
-                    break
+            if not flag:
+                break
         else:
             count += 1
     return count
 
 
-def trans_to_cover(trans, att_tree):
-    """Convert generated transactions to transaction cover 
-    """
-    c_trans = []
-    for tran in trans:
-        temp = []
-        for t in tran:
-            if len(att_tree[t].child) > 0:
-                temp.extend(att_tree[t].cover)
-            else:
-                temp.append(t)
-        c_trans.append(temp)
-
-
-def average_relative_error(att_tree, data, result, qd=2, s=5):
+def average_relative_error(att_trees, data, result, qd=2, s=0.5):
     "return average relative error of anonmized microdata,qd denote the query dimensionality, b denot seleciton of query"
     are = 0.0
-    len_att = len(att_tree)
+    len_att = len(att_trees)
     blist = []
+    att_roots = [t['*'] for t in att_trees]
+    att_cover = []
     seed = math.pow(s*1.0/100, 1.0/(qd +1))
+    # transform generalized result to coverage
+    tran_result = gen_to_cover(att_trees, result)
+    # compute b for each attributes
     for i in range(len_att):
-        blist.append(math.ceil(att_tree[i].support) * seed))
-    num = 100
+        blist.append(int(math.ceil(att_roots[i].support * seed)))
+    if _DEBUG:
+        print "blist %s" % blist
+    # query times, normally it's 1000
+    q_times = 10
     zeroare = 0
-    # pdb.set_trace()
-    for turn in range(num):
+    for i in range(len_att):
+        att_cover.append(att_roots[i].cover.keys())
+    pdb.set_trace()
+    for turn in range(q_times):
         att_select = []
         value_select = []
-        i = 0 
-        while i < qd:
-            t = random.randint(0,6)
-            if t not in att_select:
-                att_select.append(t)
-            else:
-                i -= 1
-            i += 1
-        att_select.append(7)
-        lenquery = len(att_select)
-        
-        # pdb.set_trace()
-        for i in range(lenquery):
+        i = 0
+        # select QI att
+        att_select = random.sample(range(0, len_att-1), qd)
+        # append SA. So len(att_select) == qd+1
+        att_select.append(len_att-1)
+        if _DEBUG:
+            print "ARE %d" % turn
+            print "Att select %s" % att_select
+        for i in range(qd+1):
             index = att_select[i]
             temp = []
             count = 0
-            while count < blist[index]:
-                t = random.choice(att_cover[index])
-                if t not in temp:
-                    temp.append(t)
-                else:
-                    count -= 1
-                count += 1
+            temp = random.sample(att_cover[index], blist[index])
             value_select.append(temp)
         acout = count_query(data, att_select, value_select)
-        rcout = count_query(result, att_select, value_select)
+        rcout = count_query(tran_result, att_select, value_select)
         if acout != 0:
             are += abs(acout - rcout) * 1.0 / acout
         else:
-            zeroare += 0 
-    print "Times=%d when Query on microdata is Zero" % zeroare
-    if num == zeroare:
+            zeroare += 1 
+    print "Times = %d when Query on microdata is Zero" % zeroare
+    if q_times == zeroare:
         return 0            
-    return are / (num - zeroare)
+    return are / (q_times - zeroare)
 
 
 def num_analysis(attlist):
