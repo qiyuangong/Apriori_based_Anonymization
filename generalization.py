@@ -33,7 +33,6 @@ class GenTree(object):
                 t.support += 1
                 t.cover[self.value] = self
 
-
     def node(self, value):
         """Search tree with value, return GenTree node.
         If value == node value, return node. 

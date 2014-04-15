@@ -72,6 +72,19 @@ def expand_tran(tran, cut=None):
     return ex_tran
 
 
+def init_gl_count_tree():
+    """Init count tree order according to generalizaiton hierarchy
+    """
+    global gl_count_tree
+    # creat count tree
+    gl_count_tree = []
+    for k, v in gl_att_tree.iteritems():
+        gl_count_tree.append(k)
+    # delete *, and sort reverse
+    gl_count_tree.remove('*')
+    gl_count_tree.sort(cmp=tran_cmp, reverse=True)
+
+
 def init_count_tree():
     """initialize a new cout tree
     """
@@ -229,6 +242,7 @@ def DA(att_tree, trans, k=25, m=2):
     """
     global gl_att_tree
     gl_att_tree = att_tree
+    init_gl_count_tree()
     cut = []
     ctree = create_count_tree(trans, m)
     if __DEBUG:
@@ -243,6 +257,7 @@ def AA(att_tree, trans, k=25, m=2):
     """
     global gl_att_tree
     gl_att_tree = att_tree
+    init_gl_count_tree()
     cut = []
     for i in range(1, m+1):
         ctree = init_count_tree()
@@ -255,7 +270,6 @@ def AA(att_tree, trans, k=25, m=2):
                 if not check_overlap(t):
                     t.sort(cmp=tran_cmp, reverse=True)
                     ctree.add_to_tree(t)
-        pdb.set_trace()
         # run DA
         new_cut = R_DA(ctree, cut, k, i)
         merge_cut(cut, new_cut)
@@ -278,24 +292,3 @@ def trans_gen(trans, cut):
         gen_trans.append(list(set(gen_tran)))
     return gen_trans
 
-
-def init_gl_count_tree():
-    """Init count tree order according to generalizaiton hierarchy
-    """
-    global gl_count_tree
-    # creat count tree
-    gl_count_tree = []
-    for k, v in gl_att_tree.iteritems():
-        gl_count_tree.append(k)
-    # delete *, and sort reverse
-    gl_count_tree.remove('*')
-    gl_count_tree.sort(cmp=tran_cmp, reverse=True)
-
-
-def transform_result(data, trans):
-    """
-    Replace transactions part with generalized transactions
-    """
-    for i in range(len(data)):
-        data[i][-1] = trans[i]
-    return data
