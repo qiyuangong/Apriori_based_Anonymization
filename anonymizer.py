@@ -1,10 +1,17 @@
 #!/usr/bin/env python
 #coding=utf-8
+import sys
 from Apriori_based_Anon import Apriori_based_Anon
 from read_data import read_data, read_tree
 # Poulis set k=25, m=2 as default!
 
 if __name__ == '__main__':
+    if len(sys.argv) <= 1:
+        flag = True
+    elif sys.argv[1] == 'DA':
+        flag = False
+    else:
+        flag = True
     #read gentree tax
     att_tree = read_tree()
     #read record
@@ -15,7 +22,12 @@ if __name__ == '__main__':
     for i in range(len(trans)):
         trans[i] = list(set(trans[i]))
     # cut = aa.DA(trans)
-    cut = aa.AA(trans[:])
+    if flag:
+        print "Begin AA"
+        cut = aa.AA(trans[:])
+    else:
+        print "Begin Da"
+        cut = aa.DA(trans[:])
     print "Final Cut"
     print cut
     result = aa.trans_gen(trans, cut)

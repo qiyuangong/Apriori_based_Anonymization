@@ -73,11 +73,15 @@ class Apriori_based_Anon(object):
             print "tran %s " % tran
             print "ex_tran %s" % ex_tran
         if cut:
+            delete_list = []
             for temp in ex_tran:
                 ancestor = [parent.value for parent in self.att_tree[temp].parent]
                 for t in cut:
                     if t in ancestor:
-                        ex_tran.remove(temp)
+                        delete_list.append(temp)
+                        break
+            for t in delete_list:
+                ex_tran.remove(t)
         return ex_tran
 
     def init_count_tree(self):
@@ -132,7 +136,7 @@ class Apriori_based_Anon(object):
                 # convet tuple to list
                 temp = [list(combination) for combination in temp]
                 for t in temp:
-                    if not self.check_overlap(t):
+                    if not self.check_overlap(t) and len(t):
                         t.sort(cmp=self.tran_cmp, reverse=True)
                         ctree.add_to_tree(t)
         return ctree
@@ -170,7 +174,6 @@ class Apriori_based_Anon(object):
             if self.check_cover(tran, t):
                 cut.append(t) 
         # sort by support, the same effect as sorting by NCP
-        # pdb.set_trace()
         cut.sort(cmp=self.cut_cmp)
         for t in cut:
             t.sort(cmp=self.tran_cmp, reverse=True)
@@ -216,12 +219,17 @@ class Apriori_based_Anon(object):
         # pdb.set_trace()
         if ctree.level > 0 and self.check_cover([ctree.value], cut):
             return []
+        if len(self.att_tree[ctree.value].child) == 0:
+            return []
         if len(ctree.child):
             for temp in ctree.child:
                 new_cut = self.R_DA(temp, cut, k, m)
                 self.merge_cut(cut, new_cut)
-        elif ctree.level >= 1 and ctree.support < k and ctree.support > 0:
-            return self.get_cut(ctree, k)
+        elif ctree.support < k and ctree.support > 0:
+            new_cut = self.get_cut(ctree, k)
+            self.merge_cut(cut, new_cut)
+        else:
+            return []
         return cut
 
     def DA(self, trans, k=25, m=2):
@@ -243,17 +251,18 @@ class Apriori_based_Anon(object):
         for i in range(1, m+1):
             ctree = self.init_count_tree()
             for t in trans:
+                temp = []
                 ex_t = self.expand_tran(t, cut)
-                temp = combinations(ex_t, i)
+                for j in range(1, i+1):
+                    temp.extend(combinations(ex_t, j))
                 # convet tuple to list
                 temp = [list(t) for t in temp]
                 for t in temp:
-                    if not self.check_overlap(t):
+                    if not self.check_overlap(t) and len(t):
                         t.sort(cmp=self.tran_cmp, reverse=True)
                         ctree.add_to_tree(t)
             # run DA
-            new_cut = self.R_DA(ctree, cut, k, i)
-            self.merge_cut(cut, new_cut)
+            self.R_DA(ctree, cut, k, i)
         return cut
 
     def trans_gen(self, trans, cut):
