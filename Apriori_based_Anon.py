@@ -64,11 +64,15 @@ def expand_tran(tran, cut=None):
         print "tran %s " % tran
         print "ex_tran %s" % ex_tran
     if cut:
+        delete_list = []
         for temp in ex_tran:
             ancestor = [parent.value for parent in gl_att_tree[temp].parent]
             for t in cut:
                 if t in ancestor:
-                    ex_tran.remove(temp)
+                    delete_list.append(temp)
+                    break
+        for t in delete_list:
+            ex_tran.remove(t)
     return ex_tran
 
 
@@ -140,7 +144,7 @@ def create_count_tree(trans, m):
             # convet tuple to list
             temp = [list(combination) for combination in temp]
             for t in temp:
-                if not check_overlap(t):
+                if not check_overlap(t) and len(t):
                     t.sort(cmp=tran_cmp, reverse=True)
                     ctree.add_to_tree(t)
     return ctree
@@ -179,7 +183,6 @@ def get_cut(ctree, k):
         if check_cover(tran, t):
             cut.append(t) 
     # sort by support, the same effect as sorting by NCP
-    # pdb.set_trace()
     cut.sort(cmp=cut_cmp)
     for t in cut:
         t.sort(cmp=tran_cmp, reverse=True)
@@ -224,15 +227,20 @@ def merge_cut(cut, new_cut):
 def R_DA(ctree, cut, k=25, m=2):
     """Recursively get cut. Each branch can be paralleled
     """
-    # pdb.set_trace()
     if ctree.level > 0 and check_cover([ctree.value], cut):
+        return []
+    # leaf node means that this node value is not generalized
+    if len(gl_att_tree[ctree.value].child) == 0:
         return []
     if len(ctree.child):
         for temp in ctree.child:
             new_cut = R_DA(temp, cut, k, m)
             merge_cut(cut, new_cut)
-    elif ctree.level >= 1 and ctree.support < k and ctree.support > 0:
-        return get_cut(ctree, k)
+    elif ctree.support < k and ctree.support > 0:
+        new_cut = get_cut(ctree, k)
+        merge_cut(cut, new_cut)
+    else:
+        return []
     return cut
 
 
@@ -260,19 +268,22 @@ def AA(att_tree, trans, k=25, m=2):
     init_gl_count_tree()
     cut = []
     for i in range(1, m+1):
+        # Herein is the reason why previous AA return different cut from DA
+        # Beacuse AA only reduce ith-items for count tree, 1..i-1 still needed
         ctree = init_count_tree()
         for t in trans:
+            temp = []
             ex_t = expand_tran(t, cut)
-            temp = combinations(ex_t, i)
+            for j in range(1, i+1):
+                temp.extend(combinations(ex_t, j))
             # convet tuple to list
             temp = [list(t) for t in temp]
             for t in temp:
-                if not check_overlap(t):
+                if not check_overlap(t) and len(t):
                     t.sort(cmp=tran_cmp, reverse=True)
                     ctree.add_to_tree(t)
         # run DA
-        new_cut = R_DA(ctree, cut, k, i)
-        merge_cut(cut, new_cut)
+        R_DA(ctree, cut, k, i)
     return cut
 
 
