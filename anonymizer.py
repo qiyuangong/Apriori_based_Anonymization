@@ -2,6 +2,7 @@
 #coding=utf-8
 from Apriori_based_Anon import AA, DA, trans_gen
 from read_data import read_data, read_tree
+from evaluation import average_relative_error
 import sys
 # Poulis set k=25, m=2 as default!
 
@@ -30,3 +31,5 @@ if __name__ == '__main__':
     print cut
     result = trans_gen(trans, cut)
     print "Finish T-Anonymization!!"
+    print "Begin Evaluation"
+    are = average_relative_error(att_tree, trans, result)
