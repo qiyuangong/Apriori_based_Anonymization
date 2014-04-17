@@ -4,7 +4,7 @@ import math
 import random
 
 
-_DEBUG = True
+_DEBUG = False
 
 def NCP(gen_tran, att_tree):
     """Compute NCP (Normalized Certainty Penalty) 
@@ -32,80 +32,55 @@ def get_cover(att_tree, node):
     return cover
 
 
-
-def gen_to_cover(att_trees, result):
+def gen_to_cover(att_tree, result):
     """
     Transform generlized result set to coverage result set
     """
     gen_cover = []
-    for t in result:
+    for record in result:
         temp = []
-        for i in range(len(t)):
-            temp.append(get_cover(att_trees[i], t[i]))
+        for t in record:
+            temp.extend(get_cover(att_tree, t))
+        temp = list(set(temp))
         gen_cover.append(temp)
     return gen_cover
 
 
-def count_query(data, att_select, value_select):
+def count_query(data, value_select):
     "input query att_select and value_select,return count()"
     count = 0
-    lenquery = len(att_select)
     for record in data:
-        for i in range(lenquery):
-            index = att_select[i]
-            value = value_select[i]
-            flag = False
-            for t in value:
-                if t in record[index]:
-                    flag = True
-                    break
-            if not flag:
-                break
+        for t in value_select:
+            if t in record:
+                break  
         else:
-            count += 1
+            count -= 1
+        count += 1
     return count
 
 
-def average_relative_error(att_trees, data, result, qd=2, s=0.5):
+def average_relative_error(att_tree, data, result, qd=2, s=0.5):
     "return average relative error of anonmized microdata,qd denote the query dimensionality, b denot seleciton of query"
     are = 0.0
-    len_att = len(att_trees)
-    blist = []
-    att_roots = [t['*'] for t in att_trees]
-    att_cover = []
+    b = 0
+    att_cover = att_tree['*'].cover.keys()
     seed = math.pow(s*1.0/100, 1.0/(qd +1))
     # transform generalized result to coverage
-    tran_result = gen_to_cover(att_trees, result)
-    # compute b for each attributes
-    for i in range(len_att):
-        blist.append(int(math.ceil(att_roots[i].support * seed)))
+    tran_result = gen_to_cover(att_tree, result)
+    # compute b 
+    b = int(math.ceil(att_tree['*'].support * seed))
     if _DEBUG:
-        print "blist %s" % blist
+        print "b %d" % b
     # query times, normally it's 1000
-    q_times = 10
+    q_times = 100
     zeroare = 0
-    for i in range(len_att):
-        att_cover.append(att_roots[i].cover.keys())
-    pdb.set_trace()
     for turn in range(q_times):
-        att_select = []
         value_select = []
-        i = 0
-        # select QI att
-        att_select = random.sample(range(0, len_att-1), qd)
-        # append SA. So len(att_select) == qd+1
-        att_select.append(len_att-1)
         if _DEBUG:
             print "ARE %d" % turn
-            print "Att select %s" % att_select
-        for i in range(qd+1):
-            index = att_select[i]
-            temp = []
-            count = 0
-            temp = random.sample(att_cover[index], blist[index])
-            value_select.append(temp)
-        acout = count_query(data, att_select, value_select)
-        rcout = count_query(tran_result, att_select, value_select)
+        value_select = random.sample(att_cover, b)
+        acout = count_query(data, value_select)
+        rcout = count_query(tran_result, value_select)
         if acout != 0:
             are += abs(acout - rcout) * 1.0 / acout
         else:
@@ -116,29 +91,3 @@ def average_relative_error(att_trees, data, result, qd=2, s=0.5):
     return are / (q_times - zeroare)
 
 
-def num_analysis(attlist):
-    """plot distribution of attlist"""
-    import operator
-    temp = {}
-    for t in attlist:
-        t = int(t)
-        if not t in temp.keys():
-            temp[t] = 1
-        else:
-            temp[t] += 1
-    # sort the dict
-    items = temp.items()
-    items.sort()
-    value = []
-    count = []
-    for k, v  in items:
-        value.append(k)
-        count.append(v)
-    # pdb.set_trace()
-    xlabel('value')
-    ylabel('count')
-    plt.hist(count, bins=value, normed=1, histtype='step', rwidth=0.8)
-    # legend(loc='upper left')
-    # grid on
-    grid(True)
-    show()
