@@ -17,9 +17,9 @@ def save_to_file(result):
     for record in result:
         line = ';'.join(record) + '\n'
         file_result.write(line)
+    file_result.close()
     try:
-        file_result.close()
+        ftp_upload(file_name, file_path)
     except:
         print "Upload Fail!"
-    ftp_upload(file_name, file_path)
     print "Save Complete!"
