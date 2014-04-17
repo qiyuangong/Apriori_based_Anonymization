@@ -72,7 +72,7 @@ def average_relative_error(att_tree, data, result, qd=2, s=0.5):
     if _DEBUG:
         print "b %d" % b
     # query times, normally it's 1000
-    q_times = 10
+    q_times = 100
     zeroare = 0
     for turn in range(q_times):
         value_select = []

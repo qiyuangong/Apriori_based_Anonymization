@@ -3,12 +3,9 @@
 
 # Poulis set k=25, m=2 as default!
 
+import pdb
 from generalization import GenTree, CountTree
 from random import randrange
-import pdb
-import sys
-from ftp_upload import ftpupload
-import socket
 from itertools import combinations
 
 
