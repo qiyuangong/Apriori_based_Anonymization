@@ -246,13 +246,14 @@ class Apriori_based_Anon(object):
         Developed by Manolis Terrovitis
         """
         cut = []
+        # Codes below slightly different from Manolis's pseudocode.
+        # I confirmed with Manolis that it's actual implement for AA.
+        # The pseudocode in paper is not abstracted carefully.
+        ctree = self.init_count_tree()
         for i in range(1, m+1):
-            ctree = self.init_count_tree()
             for t in trans:
-                temp = []
                 ex_t = self.expand_tran(t, cut)
-                for j in range(1, i+1):
-                    temp.extend(combinations(ex_t, j))
+                temp = combinations(ex_t, i)
                 # convet tuple to list
                 temp = [list(t) for t in temp]
                 for t in temp:
