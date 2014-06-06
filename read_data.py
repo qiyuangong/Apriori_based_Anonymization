@@ -53,12 +53,11 @@ def read_tree_file(treename):
 def read_data():
     """read microda for *.txt and return read data
     """
-    data = []
     conditionfile = open('data/conditions05.csv', 'rU')
     print "Reading Data..."
     conditiondata = {}
     for i, line in enumerate(conditionfile):
-        line = line[:-2]
+        line = line.strip()
         # ignore first line of csv
         if i == 0:
             continue
