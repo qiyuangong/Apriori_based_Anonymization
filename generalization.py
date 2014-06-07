@@ -14,7 +14,7 @@ class GenTree(object):
     self.cover: leaf values cover by node
     """
 
-    def __init__(self, value = None, parent = None):
+    def __init__(self, value = None, parent = None, isleaf = False):
         self.value = ''
         self.level = 0
         self.support = 0
@@ -29,9 +29,10 @@ class GenTree(object):
             self.parent.insert(0, parent)
             parent.child.append(self)
             self.level = parent.level + 1
-            for t in self.parent:
-                t.support += 1
-                t.cover[self.value] = self
+            if isleaf:
+                for t in self.parent:
+                    t.support += 1
+                    t.cover[self.value] = self
 
     def node(self, value):
         """Search tree with value, return GenTree node.
