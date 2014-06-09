@@ -38,7 +38,7 @@ class Apriori_based_Anon(object):
         if support1 != support2:
             return support1 - support2
         else:
-            return (node1 > node2)
+            return cmp(node1, node2)
 
     def cut_cmp(self, cut1, cut2):
         """Compare cut1 (list) and cut2 (list)
