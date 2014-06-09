@@ -26,7 +26,7 @@ def tran_cmp(node1, node2):
     if support1 != support2:
         return support1 - support2
     else:
-        return (node1 > node2)
+        return cmp(node1, node2)
 
 
 def cut_cmp(cut1, cut2):
