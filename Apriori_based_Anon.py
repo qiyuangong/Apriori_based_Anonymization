@@ -24,7 +24,7 @@ def tran_cmp(node1, node2):
     support1 = gl_att_tree[node1].support
     support2 = gl_att_tree[node2].support
     if support1 != support2:
-        return support1 - support2
+        return cmp(support1, support2)
     else:
         return cmp(node1, node2)
 
@@ -40,7 +40,7 @@ def cut_cmp(cut1, cut2):
     for t in cut2:
         support2 += gl_att_tree[t].support
     if support1 != support2:
-        return support1 - support2
+        return cmp(support1, support2)
     else:
         return (cut1 > cut2)    
 
