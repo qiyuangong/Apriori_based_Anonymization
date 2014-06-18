@@ -36,7 +36,7 @@ class Apriori_based_Anon(object):
         support1 = self.att_tree[node1].support
         support2 = self.att_tree[node2].support
         if support1 != support2:
-            return support1 - support2
+            return cmp(support1, support2)
         else:
             return cmp(node1, node2)
 
@@ -51,7 +51,7 @@ class Apriori_based_Anon(object):
         for t in cut2:
             support2 += self.att_tree[t].support
         if support1 != support2:
-            return support1 - support2
+            return cmp(support1, support2)
         else:
             return (cut1 > cut2)    
 
