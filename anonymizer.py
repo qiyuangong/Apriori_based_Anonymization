@@ -2,9 +2,9 @@
 #coding=utf-8
 import sys
 from Apriori_based_Anon import Apriori_based_Anon
-from read_data import read_data, read_tree
-from evaluation import average_relative_error
-from save_result import save_to_file
+from utils.read_data import read_data, read_tree
+from utils.evaluation import average_relative_error
+from utils.save_result import save_to_file
 # Poulis set k=25, m=2 as default!
 
 if __name__ == '__main__':
