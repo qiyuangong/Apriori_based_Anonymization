@@ -4,7 +4,8 @@
 # Poulis set k=25, m=2 as default!
 
 import pdb
-from generalization import GenTree, CountTree
+from models.gentree import GenTree
+from models.counttree import CountTree
 from random import randrange
 from itertools import combinations
 

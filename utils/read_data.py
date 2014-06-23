@@ -5,7 +5,7 @@
 # user att ['DUID','PID','DUPERSID','DOBMM','DOBYY','SEX','RACEX','RACEAX','RACEBX','RACEWX','RACETHNX','HISPANX','HISPCAT','EDUCYEAR','Year','marry','income','poverty']
 # condition att ['DUID','DUPERSID','ICD9CODX','year']
 
-from generalization import GenTree
+from models.gentree import GenTree
 
 
 __DEBUG = False

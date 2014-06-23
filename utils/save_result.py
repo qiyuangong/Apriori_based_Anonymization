@@ -6,7 +6,7 @@
 import socket
 import pickle
 from datetime import datetime
-from ftp_upload import ftp_upload
+from utils.ftp_upload import ftp_upload
 
 def save_to_file(result, flag=0):
     print "Saving result...."
