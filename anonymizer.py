@@ -1,5 +1,9 @@
-#!/usr/bin/env python
-#coding=utf-8
+"""
+run DA and AA with given parameters
+"""
+
+# !/usr/bin/env python
+# coding=utf-8
 from Apriori_based_Anon import AA, DA, trans_gen
 from utils.read_data import read_data, read_tree
 from utils.evaluation import average_relative_error
@@ -9,30 +13,29 @@ import sys
 
 if __name__ == '__main__':
     if len(sys.argv) <= 1:
-        flag = True
+        FLAG = True
     elif sys.argv[1] == 'DA':
-        flag = False
+        FLAG = False
     else:
-        flag = True
-    #read gentree tax
-    att_tree = read_tree()
-    #read record
-    trans = read_data()
+        FLAG = True
+    # read gentree tax
+    ATT_TREES = read_tree()
+    # read record
+    DATA = read_data()
     # remove duplicate items
-    for i in range(len(trans)):
-        trans[i] = list(set(trans[i]))
-    if flag:
+    for i in range(len(DATA)):
+        DATA[i] = list(set(DATA[i]))
+    if FLAG:
         print "Begin AA"
-        cut = AA(att_tree, trans)
+        CUT = AA(ATT_TREES, DATA)
     else:
         print "Begin DA"
-        cut = DA(att_tree, trans)
-    # cut = AA(att_tree[-1], trans)
+        CUT = DA(ATT_TREES, DATA)
     print "Final Cut"
-    print cut
-    result = trans_gen(trans, cut)
-    save_to_file(result)
+    print CUT
+    result = trans_gen(DATA, CUT)
+    # save_to_file(result)
     print "Finish T-Anonymization!!"
     print "Begin Evaluation"
-    are = average_relative_error(att_tree, trans, result)
+    are = average_relative_error(ATT_TREES, DATA, result)
     print "Average Relative Error: %.2f" % are

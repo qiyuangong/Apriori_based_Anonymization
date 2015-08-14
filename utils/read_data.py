@@ -20,7 +20,7 @@ def read_tree(flag=0):
     else:
         return read_tree_file('even')
 
-  
+
 def read_tree_file(treename):
     """read tree data from treename
     """
@@ -28,12 +28,12 @@ def read_tree_file(treename):
     att_tree = {}
     prefix = 'data/treefile_'
     postfix = ".txt"
-    treefile = open(prefix + treename + postfix,'rU')
+    treefile = open(prefix + treename + postfix, 'rU')
     att_tree['*'] = GenTree('*')
     if __DEBUG:
         print "Reading Tree" + treename
     for line in treefile:
-        #delete \n
+        # delete \n
         if len(line) <= 1:
             break
         line = line.strip()
@@ -44,8 +44,8 @@ def read_tree_file(treename):
             isleaf = False
             if i == len(temp):
                 isleaf = True
-            if not t in att_tree:
-                # always satisfy 
+            if t not in att_tree:
+                # always satisfy
                 att_tree[t] = GenTree(t, att_tree[temp[i - 1]], isleaf)
     if __DEBUG:
         print "Nodes No. = %d" % att_tree['*'].support

@@ -13,17 +13,17 @@ from itertools import combinations
 __DEBUG = False
 # QI number
 # att_tree store root node for each att
-gl_att_tree = []
+ATT_TREES = []
 # count tree root
-gl_count_tree = []
+COUNT_TREE = []
 
 
 def tran_cmp(node1, node2):
     """Compare node1 (str) and node2 (str)
     Compare two nodes according to their support
     """
-    support1 = gl_att_tree[node1].support
-    support2 = gl_att_tree[node2].support
+    support1 = ATT_TREES[node1].support
+    support2 = ATT_TREES[node2].support
     if support1 != support2:
         return cmp(support1, support2)
     else:
@@ -37,13 +37,13 @@ def cut_cmp(cut1, cut2):
     support1 = 0
     support2 = 0
     for t in cut1:
-        support1 += gl_att_tree[t].support
+        support1 += ATT_TREES[t].support
     for t in cut2:
-        support2 += gl_att_tree[t].support
+        support2 += ATT_TREES[t].support
     if support1 != support2:
         return cmp(support1, support2)
     else:
-        return (cut1 > cut2)    
+        return (cut1 > cut2)
 
 
 def expand_tran(tran, cut=None):
@@ -52,8 +52,8 @@ def expand_tran(tran, cut=None):
     ex_tran = tran[:]
     # extend t with all parents
     for temp in tran:
-        for t in gl_att_tree[temp].parent:
-            if not t.value in ex_tran: 
+        for t in ATT_TREES[temp].parent:
+            if t.value not in ex_tran:
                 ex_tran.append(t.value)
     ex_tran.remove('*')
     # sort ex_tran
@@ -64,7 +64,7 @@ def expand_tran(tran, cut=None):
     if cut:
         delete_list = []
         for temp in ex_tran:
-            ancestor = [parent.value for parent in gl_att_tree[temp].parent]
+            ancestor = [parent.value for parent in ATT_TREES[temp].parent]
             for t in cut:
                 if t in ancestor:
                     delete_list.append(temp)
@@ -77,14 +77,14 @@ def expand_tran(tran, cut=None):
 def init_gl_count_tree():
     """Init count tree order according to generalizaiton hierarchy
     """
-    global gl_count_tree
+    global COUNT_TREE
     # creat count tree
-    gl_count_tree = []
-    for k, v in gl_att_tree.iteritems():
-        gl_count_tree.append(k)
+    COUNT_TREE = []
+    for k, v in ATT_TREES.iteritems():
+        COUNT_TREE.append(k)
     # delete *, and sort reverse
-    gl_count_tree.remove('*')
-    gl_count_tree.sort(cmp=tran_cmp, reverse=True)
+    COUNT_TREE.remove('*')
+    COUNT_TREE.sort(cmp=tran_cmp, reverse=True)
 
 
 def init_count_tree():
@@ -92,7 +92,7 @@ def init_count_tree():
     """
     # initialize count tree
     ctree = CountTree('*')
-    for t in gl_count_tree:
+    for t in COUNT_TREE:
         CountTree(t, ctree)
     return ctree
 
@@ -106,7 +106,7 @@ def check_overlap(tran):
         for j in range(len_tran):
             if i == j:
                 continue
-            ancestor = [parent.value for parent in gl_att_tree[tran[j]].parent]
+            ancestor = [parent.value for parent in ATT_TREES[tran[j]].parent]
             ancestor.append(tran[j])
             if tran[i] in ancestor:
                 return True
@@ -120,7 +120,7 @@ def check_cover(tran, cut):
     if len(cut) == 0:
         return False
     for temp in tran:
-        ancestor = [parent.value for parent in gl_att_tree[temp].parent]
+        ancestor = [parent.value for parent in ATT_TREES[temp].parent]
         ancestor.append(temp)
         for t in cut:
             if t in ancestor:
@@ -137,7 +137,7 @@ def create_count_tree(trans, m):
     # extend t and insert to count tree
     for tran in trans:
         ex_t = expand_tran(tran)
-        for i in range(1, m+1):
+        for i in range(1, m + 1):
             temp = combinations(ex_t, i)
             # convet tuple to list
             temp = [list(combination) for combination in temp]
@@ -158,15 +158,15 @@ def get_cut(ctree, k):
     tran = ctree.prefix[:]
     # get all ancestors
     for t in tran:
-        parents = gl_att_tree[t].parent[:]
-        parents.append(gl_att_tree[t])
+        parents = ATT_TREES[t].parent[:]
+        parents.append(ATT_TREES[t])
         for p in parents:
-            if not p.value in ancestor:
+            if p.value not in ancestor:
                 ancestor.append(p.value)
     ancestor.remove('*')
     # generate all possible cut for tran
     len_ance = len(ancestor)
-    for i in range(1, len_ance+1):
+    for i in range(1, len_ance + 1):
         temp = combinations(ancestor, i)
         # convet tuple to list
         temp = [list(combination) for combination in temp]
@@ -179,12 +179,12 @@ def get_cut(ctree, k):
     cut = []
     for t in temp:
         if check_cover(tran, t):
-            cut.append(t) 
+            cut.append(t)
     # sort by support, the same effect as sorting by NCP
     cut.sort(cmp=cut_cmp)
     for t in cut:
         t.sort(cmp=tran_cmp, reverse=True)
-    # return 
+    # return
     for t in cut:
         if c_root.node(t).support >= k:
             if __DEBUG:
@@ -200,10 +200,10 @@ def merge_cut(cut, new_cut):
     """Merge new_cut to cut to form a stronger cut
     return cut cover both of them
     """
-    if new_cut == None:
+    if new_cut is None:
         return cut
     for t in new_cut:
-        if not t in cut:
+        if t not in cut:
             cut.append(t)
     # merge coverd and overlaped
     cut.sort(cmp=tran_cmp, reverse=True)
@@ -213,7 +213,7 @@ def merge_cut(cut, new_cut):
         temp = cut[i]
         for j in range(i, len_cut):
             t = cut[j]
-            ancestor = [parent.value for parent in gl_att_tree[t].parent]
+            ancestor = [parent.value for parent in ATT_TREES[t].parent]
             if temp in ancestor:
                 delete_list.append(t)
     delete_list = list(set(delete_list))
@@ -223,12 +223,13 @@ def merge_cut(cut, new_cut):
 
 
 def R_DA(ctree, cut, k=25, m=2):
-    """Recursively get cut. Each branch can be paralleled
+    """
+    Recursively get cut. Each branch can be paralleled
     """
     if ctree.level > 0 and check_cover([ctree.value], cut):
         return []
     # leaf node means that this node value is not generalized
-    if len(gl_att_tree[ctree.value].child) == 0:
+    if len(ATT_TREES[ctree.value].child) == 0:
         return []
     if len(ctree.child):
         for temp in ctree.child:
@@ -242,13 +243,18 @@ def R_DA(ctree, cut, k=25, m=2):
     return cut
 
 
+def init(att_tree):
+    global ATT_TREES
+    ATT_TREES = att_tree
+    init_gl_count_tree()
+
+
 def DA(att_tree, trans, k=25, m=2):
-    """Direct anonymization for transaction anonymization.
+    """
+    Direct anonymization for transaction anonymization.
     Developed by Manolis Terrovitis
     """
-    global gl_att_tree
-    gl_att_tree = att_tree
-    init_gl_count_tree()
+    init(att_tree)
     cut = []
     ctree = create_count_tree(trans, m)
     if __DEBUG:
@@ -258,18 +264,17 @@ def DA(att_tree, trans, k=25, m=2):
 
 
 def AA(att_tree, trans, k=25, m=2):
-    """Apriori-based anonymization for transaction anonymization. 
+    """
+    Apriori-based anonymization for transaction anonymization.
     Developed by Manolis Terrovitis
     """
-    global gl_att_tree
-    gl_att_tree = att_tree
-    init_gl_count_tree()
+    init(att_tree)
     cut = []
     # Codes below are slightly different from Manolis's pseudocode
     # I confirmed with Manolis that it's actual implement for AA.
     # The pseudocode in paper is not abstracted carefully.
     ctree = init_count_tree()
-    for i in range(1, m+1):
+    for i in range(1, m + 1):
         for t in trans:
             ex_t = expand_tran(t, cut)
             temp = combinations(ex_t, i)
@@ -291,7 +296,7 @@ def trans_gen(trans, cut):
     for tran in trans:
         gen_tran = []
         for t in tran:
-            ancestor = [parent.value for parent in gl_att_tree[t].parent]
+            ancestor = [parent.value for parent in ATT_TREES[t].parent]
             for c in cut:
                 if c in ancestor:
                     gen_tran.append(c)
@@ -299,4 +304,3 @@ def trans_gen(trans, cut):
                     gen_tran.append(t)
         gen_trans.append(list(set(gen_tran)))
     return gen_trans
-

@@ -3,26 +3,28 @@
 import string
 import math
 
-#generate tree from treeseed
+# generate tree from treeseed
+
+
 def gen_ICD9CODX_tree():
     """This generalization hierarchy is defined according to ICD9 code hierarchy.
     """
     # disease tree is more complex, so we need treeseed to simplify definition
-    treeseed = open('data/treeseed_ICD9CODX.txt','rU')
-    treefile = open('data/treefile_ICD9CODX.txt','w')
+    treeseed = open('data/treeseed_ICD9CODX.txt', 'rU')
+    treefile = open('data/treefile_ICD9CODX.txt', 'w')
 
     for line in treeseed:
         # get low bound tree leaf
-        title = '' 
+        title = ''
         temp = line.split(';')
-        #separate special value
+        # separate special value
         if temp[0][0] != 'E' and temp[0][0] != 'V':
             now = string.atoi(temp[0])
             bottom = string.atoi(temp[1].split(',')[0])
             top = string.atoi(temp[1].split(',')[1])
             if now > bottom:
                 treefile.write(line)
-                continue    
+                continue
             index = line.find(';')
             while bottom <= top:
                 stemp = str(bottom)
@@ -39,7 +41,7 @@ def gen_ICD9CODX_tree():
             top = string.atoi(temp[1].split(',')[1][1:])
             if now > bottom:
                 treefile.write(line)
-                continue    
+                continue
             index = line.find(';')
             while bottom <= top:
                 stemp = str(bottom)
@@ -55,8 +57,8 @@ def gen_even_tree(fanout):
     """This generalization hierarchy is defined according to even fan-out (average distribution).
     For large dataset fanout = 5, for small dataset fanout = 4
     """
-    treeseed = open('data/treeseed_even.txt','rU')
-    treefile = open('data/treefile_even.txt','w')
+    treeseed = open('data/treeseed_even.txt', 'rU')
+    treefile = open('data/treefile_even.txt', 'w')
 
     for line in treeseed:
         line = line.strip()
@@ -86,13 +88,13 @@ def gen_even_tree(fanout):
             while temp <= top:
                 stemp = ''
                 if level_len == 1:
-                    stemp = prefix+str(temp).rjust(str_len, '0')
-                elif temp+level_len-1 > top:
-                    stemp = prefix+str(temp).rjust(str_len, '0')
-                    stemp += ','+ prefix+str(top).rjust(str_len, '0')
+                    stemp = prefix + str(temp).rjust(str_len, '0')
+                elif temp + level_len - 1 > top:
+                    stemp = prefix + str(temp).rjust(str_len, '0')
+                    stemp += ',' + prefix + str(top).rjust(str_len, '0')
                 else:
-                    stemp = prefix+str(temp).rjust(str_len, '0')
-                    stemp += ','+ prefix+str(temp+level_len-1).rjust(str_len, '0')
+                    stemp = prefix + str(temp).rjust(str_len, '0')
+                    stemp += ',' + prefix + str(temp + level_len - 1).rjust(str_len, '0')
                 level_split.append(stemp)
                 temp += level_len
             tree.append(level_split)
@@ -109,4 +111,4 @@ def gen_even_tree(fanout):
 
 if __name__ == '__main__':
     # gen_ICD9CODX_tree()
-    # gen_even_tree(5)    
+    # gen_even_tree(5)

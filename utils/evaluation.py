@@ -6,8 +6,10 @@ import random
 
 _DEBUG = False
 
+
 def NCP(gen_tran, att_tree):
-    """Compute NCP (Normalized Certainty Penalty) 
+    """
+    Compute NCP (Normalized Certainty Penalty)
     when generate record to middle.
     """
     ncp = 0.0
@@ -16,7 +18,7 @@ def NCP(gen_tran, att_tree):
         # if support of numerator is 1, then NCP is 0
         if att_tree[gen_tran[i]].support == 1:
             continue
-        ncp +=  att_tree[gen_tran[i]].support * 1.0 / att_tree['*'].support
+        ncp += att_tree[gen_tran[i]].support * 1.0 / att_tree['*'].support
     return ncp
 
 
@@ -52,7 +54,7 @@ def count_query(data, value_select):
     for record in data:
         for t in value_select:
             if t in record:
-                break  
+                break
         else:
             count -= 1
         count += 1
@@ -64,10 +66,10 @@ def average_relative_error(att_tree, data, result, qd=2, s=0.5):
     are = 0.0
     b = 0
     att_cover = att_tree['*'].cover.keys()
-    seed = math.pow(s*1.0/100, 1.0/(qd +1))
+    seed = math.pow(s * 1.0 / 100, 1.0 / (qd + 1))
     # transform generalized result to coverage
     tran_result = gen_to_cover(att_tree, result)
-    # compute b 
+    # compute b
     b = int(math.ceil(att_tree['*'].support * seed))
     if _DEBUG:
         print "b %d" % b
@@ -84,10 +86,8 @@ def average_relative_error(att_tree, data, result, qd=2, s=0.5):
         if acout != 0:
             are += abs(acout - rcout) * 1.0 / acout
         else:
-            zeroare += 1 
+            zeroare += 1
     print "Times = %d when Query on microdata is Zero" % zeroare
     if q_times == zeroare:
-        return 0            
+        return 0
     return are / (q_times - zeroare)
-
-
