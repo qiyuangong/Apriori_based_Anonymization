@@ -1,41 +1,115 @@
 """
 run DA and AA with given parameters
 """
-
-# !/usr/bin/env python
+#!/usr/bin/env python
 # coding=utf-8
-from Apriori_based_Anon import AA, DA, trans_gen
+from Apriori_based_Anon import apriori_based_anon
 from utils.read_data import read_data, read_tree
-from utils.evaluation import average_relative_error
-from utils.save_result import save_to_file
+# from utils.make_tree import gen_even_BMS_tree
 import sys
-# Poulis set k=25, m=2 as default!
+import copy
+import random
+
+
+def get_result_one(att_tree, data, type_alg, k=10):
+    """
+    run apriori_based_anon for one time, with k=10
+    """
+    print "K=%d" % k
+    _, eval_result = apriori_based_anon(att_tree, data, type_alg, k)
+    print "NCP %0.2f" % eval_result[0] + "%"
+    print "Running time %0.2f" % eval_result[1] + " seconds"
+
+
+def get_result_k(att_tree, data, type_alg):
+    """
+    change k, whle fixing size of dataset
+    """
+    data_back = copy.deepcopy(data)
+    # for k in range(5, 105, 5):
+    for k in [2, 5, 10, 25, 50, 100]:
+        print '#' * 30
+        print "K=%d" % k
+        result, eval_result = apriori_based_anon(att_tree, data, type_alg, k)
+        data = copy.deepcopy(data_back)
+        print "NCP %0.2f" % eval_result[0] + "%"
+        print "Running time %0.2f" % eval_result[1] + " seconds"
+
+
+def get_result_dataset(att_tree, data, type_alg='AA', k=10, num_test=10):
+    """
+    fix k, while changing size of dataset
+    num_test is the test nubmber.
+    """
+    data_back = copy.deepcopy(data)
+    length = len(data_back)
+    joint = 5000
+    dataset_num = length / joint
+    if length % joint == 0:
+        dataset_num += 1
+    for i in range(1, dataset_num + 1):
+        pos = i * joint
+        ncp = rtime = 0
+        if pos > length:
+            continue
+        print '#' * 30
+        print "size of dataset %d" % pos
+        for j in range(num_test):
+            temp = random.sample(data, pos)
+            _, eval_result = apriori_based_anon(att_tree, temp, type_alg, k)
+            ncp += eval_result[0]
+            rtime += eval_result[1]
+            data = copy.deepcopy(data_back)
+        ncp /= num_test
+        rtime /= num_test
+        print "Average NCP %0.2f" % ncp + "%"
+        print "Running time %0.2f" % rtime + " seconds"
+        print '#' * 30
+
 
 if __name__ == '__main__':
-    if len(sys.argv) <= 1:
-        FLAG = True
-    elif sys.argv[1] == 'DA':
-        FLAG = False
+    # set K=10 as default
+    FLAG = ''
+    DATA_SELECT = ''
+    # gen_even_BMS_tree(5)
+    try:
+        TYPE_ALG = sys.argv[1]
+        DATA_SELECT = sys.argv[2]
+        FLAG = sys.argv[3]
+    except IndexError:
+        pass
+    INPUT_K = 10
+    if DATA_SELECT == 'i':
+        print "INFORMS data"
+        DATA = read_data(1)
+        ATT_TREE = read_tree(2)
     else:
-        FLAG = True
-    # read gentree tax
-    ATT_TREES = read_tree()
+        print "BMS-WebView data"
+        DATA = read_data(0)
+        ATT_TREE = read_tree(0)
+    # read generalization hierarchy
     # read record
-    DATA = read_data()
     # remove duplicate items
     for i in range(len(DATA)):
         DATA[i] = list(set(DATA[i]))
-    if FLAG:
-        print "Begin AA"
-        CUT = AA(ATT_TREES, DATA)
+    print "Begin Apriori based Anon"
+    if FLAG == 'k':
+        get_result_k(ATT_TREE, DATA, TYPE_ALG)
+    elif FLAG == 'data':
+        get_result_dataset(ATT_TREE, DATA, TYPE_ALG)
+    elif FLAG == '':
+        get_result_one(ATT_TREE, DATA, TYPE_ALG)
     else:
-        print "Begin DA"
-        CUT = DA(ATT_TREES, DATA)
-    print "Final Cut"
-    print CUT
-    result = trans_gen(DATA, CUT)
-    # save_to_file(result)
-    print "Finish T-Anonymization!!"
-    print "Begin Evaluation"
-    are = average_relative_error(ATT_TREES, DATA, result)
-    print "Average Relative Error: %.2f" % are
+        try:
+            INPUT_K = int(FLAG)
+            get_result_one(ATT_TREE, DATA, TYPE_ALG, INPUT_K)
+        except ValueError:
+            print "Usage: python anonymizer [i | b] [k | data]"
+            print "AA: Apriori_based_Anon, DA: Direct Anon"
+            print "i: INFORMS ataset, b: BMS-WebView dataset"
+            print "k: varying k"
+            print "data: varying size of dataset"
+            print "example: python anonymizer b 10"
+            print "example: python anonymizer b k"
+    # anonymized dataset is stored in result
+    print "Finish Apriori Based Anon!!"

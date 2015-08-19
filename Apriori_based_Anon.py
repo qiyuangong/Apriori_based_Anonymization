@@ -4,6 +4,7 @@
 # Poulis set k=25, m=2 as default!
 
 import pdb
+import time
 from models.gentree import GenTree
 from models.counttree import CountTree
 from random import randrange
@@ -13,17 +14,19 @@ from itertools import combinations
 __DEBUG = False
 # QI number
 # att_tree store root node for each att
-ATT_TREES = []
+ATT_TREE = []
 # count tree root
 COUNT_TREE = []
+ELEMENT_NUM = 0
+TREE_SUPPORT = 0
 
 
 def tran_cmp(node1, node2):
     """Compare node1 (str) and node2 (str)
     Compare two nodes according to their support
     """
-    support1 = ATT_TREES[node1].support
-    support2 = ATT_TREES[node2].support
+    support1 = ATT_TREE[node1].support
+    support2 = ATT_TREE[node2].support
     if support1 != support2:
         return cmp(support1, support2)
     else:
@@ -37,9 +40,9 @@ def cut_cmp(cut1, cut2):
     support1 = 0
     support2 = 0
     for t in cut1:
-        support1 += ATT_TREES[t].support
+        support1 += ATT_TREE[t].support
     for t in cut2:
-        support2 += ATT_TREES[t].support
+        support2 += ATT_TREE[t].support
     if support1 != support2:
         return cmp(support1, support2)
     else:
@@ -52,7 +55,7 @@ def expand_tran(tran, cut=None):
     ex_tran = tran[:]
     # extend t with all parents
     for temp in tran:
-        for t in ATT_TREES[temp].parent:
+        for t in ATT_TREE[temp].parent:
             if t.value not in ex_tran:
                 ex_tran.append(t.value)
     ex_tran.remove('*')
@@ -64,7 +67,7 @@ def expand_tran(tran, cut=None):
     if cut:
         delete_list = []
         for temp in ex_tran:
-            ancestor = [parent.value for parent in ATT_TREES[temp].parent]
+            ancestor = [parent.value for parent in ATT_TREE[temp].parent]
             for t in cut:
                 if t in ancestor:
                     delete_list.append(temp)
@@ -80,7 +83,7 @@ def init_gl_count_tree():
     global COUNT_TREE
     # creat count tree
     COUNT_TREE = []
-    for k, v in ATT_TREES.iteritems():
+    for k, v in ATT_TREE.iteritems():
         COUNT_TREE.append(k)
     # delete *, and sort reverse
     COUNT_TREE.remove('*')
@@ -106,7 +109,7 @@ def check_overlap(tran):
         for j in range(len_tran):
             if i == j:
                 continue
-            ancestor = [parent.value for parent in ATT_TREES[tran[j]].parent]
+            ancestor = [parent.value for parent in ATT_TREE[tran[j]].parent]
             ancestor.append(tran[j])
             if tran[i] in ancestor:
                 return True
@@ -120,7 +123,7 @@ def check_cover(tran, cut):
     if len(cut) == 0:
         return False
     for temp in tran:
-        ancestor = [parent.value for parent in ATT_TREES[temp].parent]
+        ancestor = [parent.value for parent in ATT_TREE[temp].parent]
         ancestor.append(temp)
         for t in cut:
             if t in ancestor:
@@ -158,8 +161,8 @@ def get_cut(ctree, k):
     tran = ctree.prefix[:]
     # get all ancestors
     for t in tran:
-        parents = ATT_TREES[t].parent[:]
-        parents.append(ATT_TREES[t])
+        parents = ATT_TREE[t].parent[:]
+        parents.append(ATT_TREE[t])
         for p in parents:
             if p.value not in ancestor:
                 ancestor.append(p.value)
@@ -213,7 +216,7 @@ def merge_cut(cut, new_cut):
         temp = cut[i]
         for j in range(i, len_cut):
             t = cut[j]
-            ancestor = [parent.value for parent in ATT_TREES[t].parent]
+            ancestor = [parent.value for parent in ATT_TREE[t].parent]
             if temp in ancestor:
                 delete_list.append(t)
     delete_list = list(set(delete_list))
@@ -229,7 +232,7 @@ def R_DA(ctree, cut, k=25, m=2):
     if ctree.level > 0 and check_cover([ctree.value], cut):
         return []
     # leaf node means that this node value is not generalized
-    if len(ATT_TREES[ctree.value].child) == 0:
+    if len(ATT_TREE[ctree.value].child) == 0:
         return []
     if len(ctree.child):
         for temp in ctree.child:
@@ -243,18 +246,11 @@ def R_DA(ctree, cut, k=25, m=2):
     return cut
 
 
-def init(att_tree):
-    global ATT_TREES
-    ATT_TREES = att_tree
-    init_gl_count_tree()
-
-
 def DA(att_tree, trans, k=25, m=2):
     """
     Direct anonymization for transaction anonymization.
     Developed by Manolis Terrovitis
     """
-    init(att_tree)
     cut = []
     ctree = create_count_tree(trans, m)
     if __DEBUG:
@@ -268,7 +264,6 @@ def AA(att_tree, trans, k=25, m=2):
     Apriori-based anonymization for transaction anonymization.
     Developed by Manolis Terrovitis
     """
-    init(att_tree)
     cut = []
     # Codes below are slightly different from Manolis's pseudocode
     # I confirmed with Manolis that it's actual implement for AA.
@@ -293,14 +288,50 @@ def trans_gen(trans, cut):
     """Generalize transaction according to ger cut
     """
     gen_trans = []
+    ncp = 0.0
     for tran in trans:
         gen_tran = []
         for t in tran:
-            ancestor = [parent.value for parent in ATT_TREES[t].parent]
+            ancestor = set([parent.value for parent in ATT_TREE[t].parent])
             for c in cut:
                 if c in ancestor:
                     gen_tran.append(c)
                 else:
                     gen_tran.append(t)
+        rncp = 0.0
+        for t in set(gen_tran):
+            rncp += ATT_TREE[t].support / TREE_SUPPORT
         gen_trans.append(list(set(gen_tran)))
-    return gen_trans
+        ncp += rncp
+    ncp /= ELEMENT_NUM
+    ncp *= 100
+    return gen_trans, ncp
+
+
+def init(att_tree, data):
+    global ATT_TREE, ELEMENT_NUM, TREE_SUPPORT
+    ELEMENT_NUM = 0
+    ATT_TREE = att_tree
+    TREE_SUPPORT = ATT_TREE['*'].support
+    for tran in data:
+        ELEMENT_NUM += len(tran)
+    init_gl_count_tree()
+
+
+def apriori_based_anon(att_tree, trans, type_alg='AA', k=25, m=2):
+    """
+    """
+    init(att_tree, trans)
+    start_time = time.time()
+    if type_alg == 'DA':
+        print "Begin DA"
+        cut = DA(att_tree, trans)
+    else:
+        print "Begin AA"
+        cut = AA(att_tree, trans)
+    rtime = float(time.time() - start_time)
+    # if __DEBUG:
+    print "Final Cut"
+    print cut
+    result, ncp = trans_gen(trans, cut)
+    return (result, (ncp, rtime))
