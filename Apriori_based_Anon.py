@@ -1,3 +1,7 @@
+"""
+main module of Apriori based Anon
+"""
+
 #!/usr/bin/env python
 #coding=utf-8
 
@@ -56,9 +60,9 @@ def expand_tran(tran, cut=None):
     # extend t with all parents
     for temp in tran:
         for t in ATT_TREE[temp].parent:
-            if t.value not in ex_tran:
+            if t.value not in set(ex_tran) and t.value != '*':
                 ex_tran.append(t.value)
-    ex_tran.remove('*')
+    # ex_tran.remove('*')
     # sort ex_tran
     ex_tran.sort(cmp=tran_cmp, reverse=True)
     if __DEBUG:
@@ -66,13 +70,13 @@ def expand_tran(tran, cut=None):
         print "ex_tran %s" % ex_tran
     if cut:
         delete_list = []
-        for temp in ex_tran:
-            ancestor = [parent.value for parent in ATT_TREE[temp].parent]
+        for temp in set(ex_tran):
+            ancestor = set([parent.value for parent in ATT_TREE[temp].parent])
             for t in cut:
                 if t in ancestor:
                     delete_list.append(temp)
                     break
-        for t in delete_list:
+        for t in set(delete_list):
             ex_tran.remove(t)
     return ex_tran
 
@@ -111,7 +115,7 @@ def check_overlap(tran):
                 continue
             ancestor = [parent.value for parent in ATT_TREE[tran[j]].parent]
             ancestor.append(tran[j])
-            if tran[i] in ancestor:
+            if tran[i] in set(ancestor):
                 return True
     return False
 
@@ -126,7 +130,7 @@ def check_cover(tran, cut):
         ancestor = [parent.value for parent in ATT_TREE[temp].parent]
         ancestor.append(temp)
         for t in cut:
-            if t in ancestor:
+            if t in set(ancestor):
                 break
         else:
             return False
@@ -164,7 +168,7 @@ def get_cut(ctree, k):
         parents = ATT_TREE[t].parent[:]
         parents.append(ATT_TREE[t])
         for p in parents:
-            if p.value not in ancestor:
+            if p.value not in set(ancestor):
                 ancestor.append(p.value)
     ancestor.remove('*')
     # generate all possible cut for tran
@@ -206,7 +210,7 @@ def merge_cut(cut, new_cut):
     if new_cut is None:
         return cut
     for t in new_cut:
-        if t not in cut:
+        if t not in set(cut):
             cut.append(t)
     # merge coverd and overlaped
     cut.sort(cmp=tran_cmp, reverse=True)
@@ -217,7 +221,7 @@ def merge_cut(cut, new_cut):
         for j in range(i, len_cut):
             t = cut[j]
             ancestor = [parent.value for parent in ATT_TREE[t].parent]
-            if temp in ancestor:
+            if temp in set(ancestor):
                 delete_list.append(t)
     delete_list = list(set(delete_list))
     for t in delete_list:
@@ -300,7 +304,7 @@ def trans_gen(trans, cut):
                     gen_tran.append(t)
         rncp = 0.0
         for t in set(gen_tran):
-            rncp += ATT_TREE[t].support / TREE_SUPPORT
+            rncp += 1.0 * ATT_TREE[t].support / TREE_SUPPORT
         gen_trans.append(list(set(gen_tran)))
         ncp += rncp
     ncp /= ELEMENT_NUM
