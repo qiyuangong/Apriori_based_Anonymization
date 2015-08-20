@@ -3,7 +3,7 @@ run DA and AA with given parameters
 """
 #!/usr/bin/env python
 # coding=utf-8
-from Apriori_based_Anon import apriori_based_anon
+from apriori_based_anon import apriori_based_anon
 from utils.read_data import read_data, read_tree
 # from utils.make_tree import gen_even_BMS_tree
 import sys
@@ -79,6 +79,10 @@ if __name__ == '__main__':
     except IndexError:
         pass
     INPUT_K = 10
+    if TYPE_ALG == 'DA':
+        print "Begin DA"
+    else:
+        print "Begin AA"
     if DATA_SELECT == 'i':
         print "INFORMS data"
         DATA = read_data(1)
@@ -87,12 +91,13 @@ if __name__ == '__main__':
         print "BMS-WebView data"
         DATA = read_data(0)
         ATT_TREE = read_tree(0)
+    print "*" * 30
     # read generalization hierarchy
     # read record
     # remove duplicate items
     for i in range(len(DATA)):
         DATA[i] = list(set(DATA[i]))
-    print "Begin Apriori based Anon"
+    # print "Begin Apriori based Anon"
     if FLAG == 'k':
         get_result_k(ATT_TREE, DATA, TYPE_ALG)
     elif FLAG == 'data':
