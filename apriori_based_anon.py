@@ -56,12 +56,14 @@ def cut_cmp(cut1, cut2):
 def expand_tran(tran, cut=None):
     """expand transaction according to generalization cut
     """
+    # TODO improve the efficiency
     ex_tran = tran[:]
     # extend item with all parents
     for temp in tran:
-        for item in ATT_TREE[temp].parent:
-            if item.value not in set(ex_tran) and item.value != '*':
-                ex_tran.append(item.value)
+        # remove '*', which is tail of parent
+        for item in ATT_TREE[temp].parent[:-1]:
+            ex_tran.append(item.value)
+    ex_tran = list(set(ex_tran))
     # ex_tran.remove('*')
     # sort ex_tran
     ex_tran.sort(cmp=tran_cmp, reverse=True)
@@ -71,13 +73,13 @@ def expand_tran(tran, cut=None):
     if cut:
         delete_list = []
         for temp in set(ex_tran):
-            ancestor = set([parent.value for parent in ATT_TREE[temp].parent])
+            ancestor = [parent.value for parent in ATT_TREE[temp].parent]
+            ancestor = set(ancestor)
             for item in cut:
                 if item in ancestor:
                     delete_list.append(temp)
                     break
-        for item in set(delete_list):
-            ex_tran.remove(item)
+        ex_tran = [t for t in ex_tran if t not in set(delete_list)]
     return ex_tran
 
 
@@ -88,9 +90,10 @@ def init_gl_count_tree():
     # creat count tree
     COUNT_TREE = []
     for item_k in ATT_TREE.keys():
-        COUNT_TREE.append(item_k)
+        if item_k is not '*':
+            COUNT_TREE.append(item_k)
     # delete *, and sort reverse
-    COUNT_TREE.remove('*')
+    # COUNT_TREE.remove('*')
     COUNT_TREE.sort(cmp=tran_cmp, reverse=True)
 
 
@@ -165,12 +168,12 @@ def get_cut(ctree, k):
     tran = ctree.prefix[:]
     # get all ancestors
     for item in tran:
-        parents = ATT_TREE[item].parent[:]
-        parents.append(ATT_TREE[item])
+        parents = ATT_TREE[item].parent[:-1]
+        parents.insert(0, ATT_TREE[item])
         for parent in parents:
-            if parent.value not in set(ancestor):
-                ancestor.append(parent.value)
-    ancestor.remove('*')
+            ancestor.append(parent.value)
+    ancestor = list(set(ancestor))
+    # ancestor.remove('*')
     # generate all possible cut for tran
     len_ance = len(ancestor)
     for i in range(1, len_ance + 1):
@@ -195,13 +198,12 @@ def get_cut(ctree, k):
     for item in cut:
         if c_root.node(item).support >= k:
             if __DEBUG:
-                print "tran %s" % tran
-                print "cut %s" % item
+                print "tran", tran
+                print "cut", item
             return item
     # Well, Terrovitis don't metion this sitituation. I suggest suppress them.
     # print "Error: Can not find cut for %s" % tran
     return '*'
-    # pdb.set_trace()
 
 
 def merge_cut(cut, new_cut):
