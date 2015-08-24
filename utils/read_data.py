@@ -50,7 +50,7 @@ def read_tree_file(treename):
                 isleaf = True
             try:
                 att_tree[t]
-            except:
+            except KeyError:
                 # always satisfy
                 att_tree[t] = GenTree(t, att_tree[temp[i - 1]], isleaf)
     if __DEBUG:
@@ -76,7 +76,7 @@ def read_data(flag=0):
             row[2] = row[2][1:-1]
             try:
                 conditiondata[row[1]].append(row[2])
-            except:
+            except KeyError:
                 conditiondata[row[1]] = [row[2]]
         conditionfile.close()
         return conditiondata.values()
@@ -90,7 +90,7 @@ def read_data(flag=0):
             # use try and except to speed up comparision
             try:
                 bmwdata[row[0]].append(row[1])
-            except:
+            except KeyError:
                 bmwdata[row[0]] = [row[1]]
         bms_webview2.close()
         return bmwdata.values()

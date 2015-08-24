@@ -28,13 +28,16 @@ class CountTree(object):
         self.parent = []
         self.child = []
         self.prefix = []
+        self.traversal = []
+        self.traversal_dict = {}
         if value is not None:
             self.value = value
         if parent is not None:
             self.parent = parent.parent[:]
             self.parent.insert(0, parent)
             self.prefix = parent.prefix[:]
-            self.prefix.append(value)
+            if parent.value != '*':
+                self.prefix.append(parent.value)
             parent.child.append(self)
             self.level = parent.level + 1
 
@@ -77,10 +80,23 @@ class CountTree(object):
             self.child[index].support += 1
 
     def dfs_traversal(self):
-        if len(self.support == 0):
-            return [self.value]
+        """
+        return deep first traversal of count tree
+        """
+        if len(self.traversal) > 0:
+            return self.traversal, self.traversal_dict
+        if self.support == 0:
+            tran_temp = self.prefix[:]
+            tran_temp.append(self.value)
+            v_temp = ';'.join(tran_temp)
+            self.traversal.append(v_temp)
+            self.traversal_dict[v_temp] = self
+            return self.traversal, self.traversal_dict
         for child in self.child:
-            return child.dfs_traversal()
+            child_traversal, child_traversal_dcit = child.dfs_traversal()
+            self.traversal.extend(child_traversal)
+            self.traversal_dict.update(child_traversal_dcit)
+        return self.traversal, self.traversal_dict
 
     def print_tree(self):
         """

@@ -101,6 +101,8 @@ def init_count_tree():
     """
     # initialize count tree
     ctree = CountTree('*')
+    # just make root ctree has a none zero support
+    ctree.support = ELEMENT_NUM
     for item in COUNT_TREE:
         CountTree(item, ctree)
     return ctree
@@ -165,6 +167,7 @@ def get_cut(ctree, k):
     cut = []
     c_root = ctree.parent[-1]
     tran = ctree.prefix[:]
+    tran.append(ctree.value)
     # get all ancestors
     for item in tran:
         parents = ATT_TREE[item].parent[:-1]
@@ -235,6 +238,42 @@ def R_DA(ctree, cut, k=25, m=2):
     """
     Recursively get cut. Each branch can be paralleled
     """
+    ctree_traversal, ctree_traversal_dict = ctree.dfs_traversal()
+    # pdb.set_trace()
+    delete_list = set()
+    for index, ctree_key in enumerate(ctree_traversal):
+        current_ctree = ctree_traversal_dict[ctree_key]
+        if ctree_key in delete_list:
+            continue
+        if check_cover([current_ctree.value], cut):
+            continue
+        if current_ctree.support < k:
+            new_cut = get_cut(current_ctree, k)
+            merge_cut(cut, new_cut)
+            # backtrack to longest prefix of path J, where in no item
+            # has been generalized in Cut
+    # R_DA(ctree, cut, k, m)
+    # pdb.set_trace()
+    return cut
+
+
+def DA(trans, k=25, m=2):
+    """
+    Direct anonymization for transaction anonymization.
+    Developed by Manolis Terrovitis
+    """
+    cut = []
+    ctree = create_count_tree(trans, m)
+    if __DEBUG:
+        print "Cut Tree"
+    R_DA(ctree, cut, k, m)
+    return cut
+
+
+def OLD_R_DA(trans, k=25, m=2):
+    """
+    Recursively get cut. Each branch can be paralleled
+    """
     if ctree.level > 0 and check_cover([ctree.value], cut):
         return []
     if len(ctree.child):
@@ -249,19 +288,6 @@ def R_DA(ctree, cut, k=25, m=2):
     else:
         return []
     return cut
-
-
-def DA(trans, k=25, m=2):
-    """
-    Direct anonymization for transaction anonymization.
-    Developed by Manolis Terrovitis
-    """
-    cut = []
-    ctree = create_count_tree(trans, m)
-    if __DEBUG:
-        print "Cut Tree"
-    R_DA(ctree, cut, k, m)
-    return cut[:]
 
 
 def AA(trans, k=25, m=2):
@@ -309,10 +335,12 @@ def apriori_based_anon(att_tree, trans, type_alg='AA', k=25, m=2):
     # AA is not correct
     init(att_tree, trans)
     start_time = time.time()
-    if type_alg == 'DA':
+    if type_alg == 'DA' or type_alg == 'da':
         cut = DA(trans, k, m)
-    else:
+    elif type_alg == 'AA' or type_alg == 'aa':
         cut = AA(trans, k, m)
+    else:
+        cut = OLD_DA(trans, k, m)
     rtime = float(time.time() - start_time)
     result = []
     ncp = 0.0
