@@ -56,7 +56,6 @@ def cut_cmp(cut1, cut2):
 def expand_tran(tran, cut=None):
     """expand transaction according to generalization cut
     """
-    # TODO improve the efficiency
     ex_tran = tran[:]
     # extend item with all parents
     for temp in tran:
@@ -238,14 +237,13 @@ def R_DA(ctree, cut, k=25, m=2):
     """
     if ctree.level > 0 and check_cover([ctree.value], cut):
         return []
-    # leaf node means that this node value is not generalized
-    if len(ATT_TREE[ctree.value].child) == 0:
-        return []
     if len(ctree.child):
+        # not leaf node of count tree
         for temp in ctree.child:
             new_cut = R_DA(temp, cut, k, m)
             merge_cut(cut, new_cut)
     elif ctree.support < k and ctree.support > 0:
+        # leaf node of count tree, and the support is less than k
         new_cut = get_cut(ctree, k)
         merge_cut(cut, new_cut)
     else:
@@ -303,7 +301,12 @@ def init(att_tree, data):
 
 def apriori_based_anon(att_tree, trans, type_alg='AA', k=25, m=2):
     """
+    main function of apriori_based_anon
+    att_tree: generalizaiton hierarchies in [dict, dict, ...] format
+    type_alg: DA: Direct Anon, AA: Apriori based Anon
+
     """
+    # AA is not correct
     init(att_tree, trans)
     start_time = time.time()
     if type_alg == 'DA':
@@ -329,6 +332,5 @@ def apriori_based_anon(att_tree, trans, type_alg='AA', k=25, m=2):
     ncp /= ELEMENT_NUM
     ncp *= 100
     # if __DEBUG:
-    print "Final Cut"
-    print cut
+    print "Final Cut", cut
     return (result, (ncp, rtime))

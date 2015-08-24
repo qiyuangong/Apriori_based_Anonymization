@@ -76,6 +76,12 @@ class CountTree(object):
         else:
             self.child[index].support += 1
 
+    def dfs_traversal(self):
+        if len(self.support == 0):
+            return [self.value]
+        for child in self.child:
+            return child.dfs_traversal()
+
     def print_tree(self):
         """
         print node and its direct children in count tree
