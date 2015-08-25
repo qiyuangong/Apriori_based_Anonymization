@@ -28,14 +28,18 @@ class CountTree(object):
         self.parent = []
         self.child = []
         self.prefix = []
+        self.path = []
         self.traversal = []
         self.traversal_dict = {}
         if value is not None:
             self.value = value
+            self.path.append(value)
         if parent is not None:
             self.parent = parent.parent[:]
             self.parent.insert(0, parent)
             self.prefix = parent.prefix[:]
+            self.path = self.prefix[:]
+            self.path.append(self.value)
             if parent.value != '*':
                 self.prefix.append(parent.value)
             parent.child.append(self)
@@ -85,9 +89,8 @@ class CountTree(object):
         """
         if len(self.traversal) > 0:
             return self.traversal, self.traversal_dict
-        if self.support == 0:
-            tran_temp = self.prefix[:]
-            tran_temp.append(self.value)
+        if len(self.child) == 0:
+            tran_temp = self.path
             v_temp = ';'.join(tran_temp)
             self.traversal.append(v_temp)
             self.traversal_dict[v_temp] = self

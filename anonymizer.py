@@ -79,7 +79,7 @@ if __name__ == '__main__':
     except IndexError:
         pass
     INPUT_K = 10
-    if TYPE_ALG == 'DA':
+    if TYPE_ALG == 'DA' or TYPE_ALG == 'da':
         print "Begin DA"
     else:
         print "Begin AA"
