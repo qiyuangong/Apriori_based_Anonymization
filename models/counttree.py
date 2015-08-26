@@ -83,23 +83,16 @@ class CountTree(object):
         else:
             self.child[index].support += 1
 
-    def dfs_traversal(self):
+    def dfs_traversal(self, traversal, traversal_dict):
         """
         return deep first traversal of count tree
         """
-        if len(self.traversal) > 0:
-            return self.traversal, self.traversal_dict
         if len(self.child) == 0:
-            tran_temp = self.path
-            v_temp = ';'.join(tran_temp)
-            self.traversal.append(v_temp)
-            self.traversal_dict[v_temp] = self
-            return self.traversal, self.traversal_dict
+            v_temp = ';'.join(self.path)
+            traversal.append(v_temp)
+            traversal_dict[v_temp] = self
         for child in self.child:
-            child_traversal, child_traversal_dcit = child.dfs_traversal()
-            self.traversal.extend(child_traversal)
-            self.traversal_dict.update(child_traversal_dcit)
-        return self.traversal, self.traversal_dict
+            child.dfs_traversal(traversal, traversal_dict)
 
     def print_tree(self):
         """

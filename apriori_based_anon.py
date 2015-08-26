@@ -264,7 +264,9 @@ def R_DA(ctree, cut, k=25, m=2):
     """
     Re-useable DA, compute cut on ctree.
     """
-    ctree_traversal, ctree_traversal_dict = ctree.dfs_traversal()
+    ctree_traversal = []
+    ctree_traversal_dict = {}
+    ctree.dfs_traversal(ctree_traversal, ctree_traversal_dict)
     # delete_list = dict()
     for index, ctree_key in enumerate(ctree_traversal):
         current_ctree = ctree_traversal_dict[ctree_key]
