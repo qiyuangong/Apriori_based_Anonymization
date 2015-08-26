@@ -11,6 +11,10 @@ import copy
 import random
 
 
+DATA_SELECT = 'b'
+TYPE_ALG = 'DA'
+
+
 def get_result_one(att_tree, data, type_alg, k=10):
     """
     run apriori_based_anon for one time, with k=10
@@ -70,7 +74,6 @@ def get_result_dataset(att_tree, data, type_alg='AA', k=10, num_test=10):
 if __name__ == '__main__':
     # set K=10 as default
     FLAG = ''
-    DATA_SELECT = ''
     # gen_even_BMS_tree(5)
     try:
         TYPE_ALG = sys.argv[1]

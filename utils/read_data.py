@@ -93,6 +93,8 @@ def read_data(flag=0):
             except KeyError:
                 bmwdata[row[0]] = [row[1]]
         bms_webview2.close()
+        # this function (values) may cause diffrent
+        # order one different machine
         return bmwdata.values()
     if __DEBUG:
         print "Read Complete..."

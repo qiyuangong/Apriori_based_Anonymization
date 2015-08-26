@@ -65,8 +65,8 @@ def expand_tran(tran, cut={}):
     # sort ex_tran
     ex_tran.sort(cmp=tran_cmp, reverse=True)
     if __DEBUG:
-        print "tran %s " % tran
-        print "ex_tran %s" % ex_tran
+        print "tran", tran
+        print "ex_tran", ex_tran
     if len(cut) > 0:
         check_result = []
         for temp in ex_tran:
@@ -108,6 +108,8 @@ def check_overlap(tran):
     """Check if items can joined with each other
     return True if overlapped, False if not
     """
+    if len(tran) == 1:
+        return False
     cover_list = []
     for item in tran:
         cover_list.extend(ATT_TREE[item].cover.keys())
@@ -127,28 +129,31 @@ def check_overlap(tran):
 
 
 def check_cover(tran, cut):
-    """Check if tran if covered by cut
+    """Check if tran if covered by cut (list)
     return True if covered, False if not
     """
     if len(cut) == 0:
         return False
-    if isinstance(cut, dict):
-        for temp in tran:
-            try:
-                cut[temp]
-            except:
-                return False
-        return True
-    else:
-        for temp in tran:
-            ancestor = [parent.value for parent in ATT_TREE[temp].parent]
-            ancestor.append(temp)
-            for item in cut:
-                if item in set(ancestor):
-                    break
-            else:
-                return False
-        return True
+    cover_dict = dict()
+    for item in cut:
+        cover_dict.update(ATT_TREE[item].cover)
+    for item in tran:
+        try:
+            cover_dict[item]
+        except KeyError:
+            return False
+    return True
+    # if len(cut) == 0:
+    #     return False
+    # for temp in tran:
+    #     ancestor = [parent.value for parent in ATT_TREE[temp].parent]
+    #     ancestor.append(temp)
+    #     for item in cut:
+    #         if item in set(ancestor):
+    #             break
+    #     else:
+    #         return False
+    # return True
 
 
 def merge_cut(cut, new_cut):
@@ -218,8 +223,7 @@ def get_cut(ctree, k):
     ancestor = []
     cuts = []
     c_root = ctree.parent[-1]
-    tran = ctree.prefix[:]
-    tran.append(ctree.value)
+    tran = ctree.path[:]
     # get all ancestors
     for item in tran:
         parents = ATT_TREE[item].parent[:-1]
@@ -271,7 +275,7 @@ def R_DA(ctree, cut, k=25, m=2):
         #     continue
         # except KeyError:
         #     pass
-        if current_ctree.support == 0:
+        if current_ctree.support == 0 or len(current_ctree.child) > 0:
             continue
         try:
             cut[current_ctree.value]
@@ -356,11 +360,8 @@ def apriori_based_anon(att_tree, trans, type_alg='AA', k=25, m=2):
     start_time = time.time()
     if type_alg == 'DA' or type_alg == 'da':
         cut = DA(trans, k, m)
-    elif type_alg == 'AA' or type_alg == 'aa':
-        cut = AA(trans, k, m)
     else:
-        print "Parameters error!"
-        return
+        cut = AA(trans, k, m)
     rtime = float(time.time() - start_time)
     result = []
     ncp = 0.0
