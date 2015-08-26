@@ -5,8 +5,6 @@ main module of Apriori based Anon
 #!/usr/bin/env python
 #coding=utf-8
 
-# Poulis set k=25, m=2 as default!
-
 import pdb
 import time
 from models.gentree import GenTree
@@ -29,10 +27,10 @@ def tran_cmp(node1, node2):
     """Compare node1 (str) and node2 (str)
     Compare two nodes according to their support
     """
-    support1 = ATT_TREE[node1].leaf_num
-    support2 = ATT_TREE[node2].leaf_num
-    if support1 != support2:
-        return cmp(support1, support2)
+    leaf_num1 = len(ATT_TREE[node1])
+    leaf_num2 = len(ATT_TREE[node2])
+    if leaf_num1 != leaf_num2:
+        return cmp(leaf_num1, leaf_num2)
     else:
         return cmp(node1, node2)
 
@@ -41,19 +39,19 @@ def cut_cmp(cut1, cut2):
     """Compare cut1 (list) and cut2 (list)
     Compare two cut according to their sum of node support
     """
-    support1 = 0
-    support2 = 0
+    leaf_num1 = 0
+    leaf_num2 = 0
     for item in cut1:
-        support1 += ATT_TREE[item].leaf_num
+        leaf_num1 += len(ATT_TREE[item])
     for item in cut2:
-        support2 += ATT_TREE[item].leaf_num
-    if support1 != support2:
-        return cmp(support1, support2)
+        leaf_num2 += len(ATT_TREE[item])
+    if leaf_num1 != leaf_num2:
+        return cmp(leaf_num1, leaf_num2)
     else:
         return cmp(cut1, cut2)
 
 
-def expand_tran(tran, cut=None):
+def expand_tran(tran, cut={}):
     """expand transaction according to generalization cut
     """
     ex_tran = tran[:]
@@ -62,14 +60,14 @@ def expand_tran(tran, cut=None):
         # remove '*', which is tail of parent
         for item in ATT_TREE[temp].parent[:-1]:
             ex_tran.append(item.value)
+    # remove duplicate values
     ex_tran = list(set(ex_tran))
-    # ex_tran.remove('*')
     # sort ex_tran
     ex_tran.sort(cmp=tran_cmp, reverse=True)
     if __DEBUG:
         print "tran %s " % tran
         print "ex_tran %s" % ex_tran
-    if cut:
+    if len(cut) > 0:
         check_result = []
         for temp in ex_tran:
             try:
@@ -110,16 +108,22 @@ def check_overlap(tran):
     """Check if items can joined with each other
     return True if overlapped, False if not
     """
-    len_tran = len(tran)
-    for i in range(len_tran):
-        for j in range(len_tran):
-            if i == j:
-                continue
-            ancestor = [parent.value for parent in ATT_TREE[tran[j]].parent]
-            ancestor.append(tran[j])
-            if tran[i] in set(ancestor):
-                return True
-    return False
+    cover_list = []
+    for item in tran:
+        cover_list.extend(ATT_TREE[item].cover.keys())
+    if len(cover_list) == len(set(cover_list)):
+        return False
+    return True
+    # len_tran = len(tran)
+    # for i in range(len_tran):
+    #     for j in range(len_tran):
+    #         if i == j:
+    #             continue
+    #         ancestor = [parent.value for parent in ATT_TREE[tran[j]].parent]
+    #         ancestor.append(tran[j])
+    #         if tran[i] in set(ancestor):
+    #             return True
+    # return False
 
 
 def check_cover(tran, cut):
@@ -156,11 +160,10 @@ def merge_cut(cut, new_cut):
     # merge coverd and overlaped
     for item in new_cut.keys():
         try:
-            if ATT_TREE[cut[item]].leaf_num < ATT_TREE[new_cut[item]].leaf_num:
+            if len(ATT_TREE[cut[item]]) < len(ATT_TREE[new_cut[item]]):
                 cut[item] = new_cut[item]
         except KeyError:
             cut[item] = new_cut[item]
-    return
 
 
 def create_count_tree(trans, m):
@@ -171,14 +174,41 @@ def create_count_tree(trans, m):
     for tran in trans:
         ex_t = expand_tran(tran)
         for i in range(1, m + 1):
-            temp = combinations(ex_t, i)
-            # convet tuple to list
-            temp = [list(combination) for combination in temp]
-            for item in temp:
-                if not check_overlap(item) and len(item):
-                    item.sort(cmp=tran_cmp, reverse=True)
-                    ctree.add_to_tree(item)
+            insert_to_ctree(ex_t, ctree, i)
     return ctree
+
+
+def insert_to_ctree(ex_t, ctree, m):
+    """
+    insert extanded tran to ctree
+    """
+    temp = combinations(ex_t, m)
+    # convet tuple to list
+    temp = [list(t) for t in temp]
+    for item in temp:
+        if not check_overlap(item) and len(item) > 0:
+            item.sort(cmp=tran_cmp, reverse=True)
+            ctree.add_to_tree(item)
+
+
+def creat_cut_dict(cut):
+    """
+    creat cut (dict) according to cut (list)
+    """
+    cut_dict = dict()
+    for item in cut:
+        cover_list = ATT_TREE[item].cover.keys()
+        for cover_value in cover_list:
+            if cover_value == item:
+                continue
+            try:
+                cut_dict[cover_value]
+                # watch dog to check if check_overlap works
+                print "ERROR: Overlap cut!"
+                pdb.set_trace()
+            except:
+                cut_dict[cover_value] = item
+    return cut_dict
 
 
 def get_cut(ctree, k):
@@ -220,32 +250,15 @@ def get_cut(ctree, k):
             if __DEBUG:
                 print "tran", tran
                 print "cut", cut
-            dict_cut = dict()
-            for item in cut:
-                cover_list = ATT_TREE[item].cover.keys()
-                for cover_value in cover_list:
-                    try:
-                        dict_cut[cover_value]
-                        pdb.set_trace()
-                    except:
-                        dict_cut[cover_value] = item
-            return dict_cut
+            return creat_cut_dict(cut)
     # Well, Terrovitis don't metion this sitituation. I suggest suppress them.
     # print "Error: Can not find cut for %s" % tran
-    dict_cut = {}
-    cover_list = ATT_TREE['*'].cover.keys()
-    for cover_value in cover_list:
-        try:
-            dict_cut[cover_value]
-            pdb.set_trace()
-        except:
-            dict_cut[cover_value] = item
-    return dict_cut
+    return creat_cut_dict(['*'])
 
 
 def R_DA(ctree, cut, k=25, m=2):
     """
-    Recursively get cut. Each branch can be paralleled
+    Re-useable DA, compute cut on ctree.
     """
     ctree_traversal, ctree_traversal_dict = ctree.dfs_traversal()
     # delete_list = dict()
@@ -260,31 +273,33 @@ def R_DA(ctree, cut, k=25, m=2):
         #     pass
         if current_ctree.support == 0:
             continue
-        if check_cover([current_ctree.value], cut):
+        try:
+            cut[current_ctree.value]
             continue
+        except KeyError:
+            pass
         if current_ctree.support < k:
             new_cut = get_cut(current_ctree, k)
             merge_cut(cut, new_cut)
             # backtrack to longest prefix of path J, where in no item
             # has been generalized in Cut
             # J = ctree_traversal_dict[ctree_key].prefix[:]
-            # J.append(ctree_traversal_dict[ctree_key].value)
             # longest_prefix = []
-            # for i in range(len(J)):
-            #     if check_cover(J[:-1 - i], cut):
+            # for item in range(J):
+            #     try:
+            #         cut[item]
             #         continue
-            #     else:
-            #         longest_prefix = J[:-1 - i]
-            #         break
+            #     except KeyError:
+            #         longest_prefix.append(item)
             # if len(longest_prefix) > 0:
-            #     pdb.set_trace()
+            #     # pdb.set_trace()
             #     for pos in range(index + 1, len(ctree_traversal)):
             #         temp = ctree_traversal_dict[ctree_traversal[pos]]
             #         if longest_prefix == temp.prefix:
             #             break
             #     for i in range(index + 1, pos):
             #         delete_list[ctree_traversal[i]] = 1
-    return cut
+    # return cut
 
 
 def DA(trans, k=25, m=2):
@@ -294,31 +309,8 @@ def DA(trans, k=25, m=2):
     """
     cut = dict()
     ctree = create_count_tree(trans, m)
-    if __DEBUG:
-        print "Cut Tree"
     R_DA(ctree, cut, k, m)
     # pdb.set_trace()
-    return cut
-
-
-def OLD_R_DA(trans, k=25, m=2):
-    """
-    Recursively get cut. Each branch can be paralleled
-    """
-    cut = dict()
-    if ctree.level > 0 and check_cover([ctree.value], cut):
-        return {}
-    if len(ctree.child):
-        # not leaf node of count tree
-        for temp in ctree.child:
-            new_cut = R_DA(temp, cut, k, m)
-            merge_cut(cut, new_cut)
-    elif ctree.support < k and ctree.support > 0:
-        # leaf node of count tree, and the support is less than k
-        new_cut = get_cut(ctree, k)
-        merge_cut(cut, new_cut)
-    else:
-        return {}
     return cut
 
 
@@ -333,18 +325,12 @@ def AA(trans, k=25, m=2):
     # The pseudocode in paper is not abstracted carefully.
     ctree = init_count_tree()
     for i in range(1, m + 1):
-        for t in trans:
-            ex_t = expand_tran(t, cut)
-            temp = combinations(ex_t, i)
-            # convet tuple to list
-            temp = [list(t) for t in temp]
-            for t in temp:
-                if not check_overlap(t) and len(t):
-                    t.sort(cmp=tran_cmp, reverse=True)
-                    ctree.add_to_tree(t)
-        # pdb.set_trace()
+        for tran in trans:
+            ex_t = expand_tran(tran, cut)
+            insert_to_ctree(ex_t, ctree, i)
         # run DA
         R_DA(ctree, cut, k, i)
+        # pdb.set_trace()
     return cut
 
 
@@ -352,7 +338,7 @@ def init(att_tree, data):
     global ATT_TREE, ELEMENT_NUM, LEAF_NUM
     ELEMENT_NUM = 0
     ATT_TREE = att_tree
-    LEAF_NUM = ATT_TREE['*'].leaf_num
+    LEAF_NUM = len(ATT_TREE['*'])
     for tran in data:
         ELEMENT_NUM += len(tran)
     init_gl_count_tree()
@@ -373,7 +359,8 @@ def apriori_based_anon(att_tree, trans, type_alg='AA', k=25, m=2):
     elif type_alg == 'AA' or type_alg == 'aa':
         cut = AA(trans, k, m)
     else:
-        cut = OLD_DA(trans, k, m)
+        print "Parameters error!"
+        return
     rtime = float(time.time() - start_time)
     result = []
     ncp = 0.0
@@ -383,9 +370,10 @@ def apriori_based_anon(att_tree, trans, type_alg='AA', k=25, m=2):
         for item in tran:
             try:
                 gen_tran.append(cut[item])
-                rncp += 1.0 * ATT_TREE[cut[item]].leaf_num / LEAF_NUM
+                rncp += 1.0 * len(ATT_TREE[cut[item]]) / LEAF_NUM
             except:
                 gen_tran.append(item)
+        gen_tran = list(set(gen_tran))
         result.append(gen_tran)
         ncp += rncp
     ncp /= ELEMENT_NUM
@@ -394,5 +382,4 @@ def apriori_based_anon(att_tree, trans, type_alg='AA', k=25, m=2):
     list_cut = list(set(cut.values()))
     list_cut.sort(cmp=tran_cmp, reverse=True)
     print "Final Cut", list_cut
-    # pdb.set_trace()
     return (result, (ncp, rtime))

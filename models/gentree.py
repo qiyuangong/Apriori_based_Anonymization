@@ -1,23 +1,19 @@
-"""
-class for generalization hierarchy
-"""
 #!/usr/bin/env python
-#coding=utf-8
+# coding=utf-8
 
 # logic tree
 
 
 class GenTree(object):
 
-    """
-    Class for Generalization hierarchies (Taxonomy Tree).
+    """Class for Generalization hierarchies (Taxonomy Tree).
     Store tree node in instances.
     self.value: node value
     self.level: tree level (top is 0)
-    self.leaf_num: leaf_num
+    self.leaf_num: number of leaf node covered
     self.parent: ancestor node list
     self.child: direct successor node list
-    self.cover: leaves nodes of current node
+    self.cover: all nodes covered by current node
     """
 
     def __init__(self, value=None, parent=None, isleaf=False):
@@ -29,6 +25,7 @@ class GenTree(object):
         self.cover = {}
         if value is not None:
             self.value = value
+            self.cover[value] = self
         if parent is not None:
             self.parent = parent.parent[:]
             self.parent.insert(0, parent)
@@ -47,3 +44,9 @@ class GenTree(object):
             return self.cover[value]
         except:
             return None
+
+    def __len__(self):
+        """
+        return number of leaf node covered by current node
+        """
+        return self.leaf_num
