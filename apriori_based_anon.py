@@ -285,21 +285,14 @@ def R_DA(ctree, cut, k=25, m=2):
         except KeyError:
             pass
         if current_ctree.support < k:
-            # gen longest prefix
-            # tran = current_ctree.path
-            # need_gen = [current_ctree.value]
-            # for i in range(len(tran) - 1):
-            #     pos = -1 - i
-            #     vtemp = ';'.join(tran[:pos])
-            #     if ctree_traversal_dict[vtemp].support < k:
-            #         need_gen.append(tran[pos - 1])
             new_cut = get_cut(current_ctree, k)
             merge_cut(cut, new_cut)
             # backtrack to longest prefix of path J, where in no item
             # has been generalized in Cut
-            # J = ctree_traversal_dict[ctree_key].prefix[:]
+            # J = current_ctree.prefix[:]
+            # need_gen = [current_ctree.value]
             # longest_prefix = []
-            # for item in range(J):
+            # for item in J:
             #     try:
             #         cut[item]
             #         continue
@@ -316,7 +309,7 @@ def R_DA(ctree, cut, k=25, m=2):
     # return cut
 
 
-def DA(trans, k=25, m=2):
+def DA(trans, k=10, m=3):
     """
     Direct anonymization for transaction anonymization.
     Developed by Manolis Terrovitis
@@ -328,7 +321,7 @@ def DA(trans, k=25, m=2):
     return cut
 
 
-def AA(trans, k=25, m=2):
+def AA(trans, k=10, m=3):
     """
     Apriori-based anonymization for transaction anonymization.
     Developed by Manolis Terrovitis

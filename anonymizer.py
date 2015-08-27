@@ -40,11 +40,28 @@ def get_result_k(att_tree, data, type_alg):
         print "Running time %0.2f" % eval_result[1] + " seconds"
 
 
+def get_result_m(att_tree, data, type_alg, k=10):
+    """
+    change k, whle fixing size of dataset
+    """
+    print "K=%d" % k
+    data_back = copy.deepcopy(data)
+    # for k in range(5, 105, 5):
+    for m in range(2, 10):
+        print '#' * 30
+        print "m=%d" % m
+        result, eval_result = apriori_based_anon(att_tree, data, type_alg, k, m)
+        data = copy.deepcopy(data_back)
+        print "NCP %0.2f" % eval_result[0] + "%"
+        print "Running time %0.2f" % eval_result[1] + " seconds"
+
+
 def get_result_dataset(att_tree, data, type_alg='AA', k=10, num_test=10):
     """
     fix k, while changing size of dataset
     num_test is the test nubmber.
     """
+    print "K=%d" % k
     data_back = copy.deepcopy(data)
     length = len(data_back)
     joint = 5000
@@ -100,9 +117,12 @@ if __name__ == '__main__':
     # remove duplicate items
     for i in range(len(DATA)):
         DATA[i] = list(set(DATA[i]))
+    # DATA = DATA[:15000]
     # print "Begin Apriori based Anon"
     if FLAG == 'k':
         get_result_k(ATT_TREE, DATA, TYPE_ALG)
+    elif FLAG == 'm':
+        get_result_m(ATT_TREE, DATA, TYPE_ALG)
     elif FLAG == 'data':
         get_result_dataset(ATT_TREE, DATA, TYPE_ALG)
     elif FLAG == '':
