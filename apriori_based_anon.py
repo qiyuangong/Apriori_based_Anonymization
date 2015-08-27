@@ -72,7 +72,7 @@ def expand_tran(tran, cut={}):
         for temp in ex_tran:
             try:
                 cut[temp]
-            except:
+            except KeyError:
                 check_result.append(temp)
         ex_tran = check_result
     return ex_tran
@@ -211,7 +211,7 @@ def creat_cut_dict(cut):
                 # watch dog to check if check_overlap works
                 print "ERROR: Overlap cut!"
                 pdb.set_trace()
-            except:
+            except KeyError:
                 cut_dict[cover_value] = item
     return cut_dict
 
@@ -220,11 +220,10 @@ def get_cut(ctree, k):
     """Given a tran, return cut making it k-anonymity with mini information
     return cut is a list e.g. ['A', 'B']
     """
-    ancestor = []
-    cuts = []
     c_root = ctree.parent[-1]
     tran = ctree.path[:]
     # get all ancestors
+    ancestor = []
     for item in tran:
         parents = ATT_TREE[item].parent[:-1]
         parents.insert(0, ATT_TREE[item])
@@ -234,6 +233,7 @@ def get_cut(ctree, k):
     # ancestor.remove('*')
     # generate all possible cuts for tran
     len_ance = len(ancestor)
+    cuts = []
     for i in range(1, len_ance + 1):
         temp = combinations(ancestor, i)
         # convet tuple to list
@@ -285,6 +285,14 @@ def R_DA(ctree, cut, k=25, m=2):
         except KeyError:
             pass
         if current_ctree.support < k:
+            # gen longest prefix
+            # tran = current_ctree.path
+            # need_gen = [current_ctree.value]
+            # for i in range(len(tran) - 1):
+            #     pos = -1 - i
+            #     vtemp = ';'.join(tran[:pos])
+            #     if ctree_traversal_dict[vtemp].support < k:
+            #         need_gen.append(tran[pos - 1])
             new_cut = get_cut(current_ctree, k)
             merge_cut(cut, new_cut)
             # backtrack to longest prefix of path J, where in no item
@@ -350,7 +358,7 @@ def init(att_tree, data):
     init_gl_count_tree()
 
 
-def apriori_based_anon(att_tree, trans, type_alg='AA', k=25, m=2):
+def apriori_based_anon(att_tree, trans, type_alg='AA', k=10, m=2):
     """
     main function of apriori_based_anon
     att_tree: generalizaiton hierarchies in [dict, dict, ...] format
@@ -374,7 +382,7 @@ def apriori_based_anon(att_tree, trans, type_alg='AA', k=25, m=2):
             try:
                 gen_tran.append(cut[item])
                 rncp += 1.0 * len(ATT_TREE[cut[item]]) / LEAF_NUM
-            except:
+            except KeyError:
                 gen_tran.append(item)
         gen_tran = list(set(gen_tran))
         result.append(gen_tran)
@@ -385,4 +393,4 @@ def apriori_based_anon(att_tree, trans, type_alg='AA', k=25, m=2):
     list_cut = list(set(cut.values()))
     list_cut.sort(cmp=tran_cmp, reverse=True)
     print "Final Cut", list_cut
-    return (result, (ncp, rtime))
+    return (result, (ncp, rtime, cut))

@@ -12,7 +12,7 @@ import random
 
 
 DATA_SELECT = 'b'
-TYPE_ALG = 'DA'
+TYPE_ALG = 'AA'
 
 
 def get_result_one(att_tree, data, type_alg, k=10):

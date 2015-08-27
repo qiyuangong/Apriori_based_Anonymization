@@ -38,10 +38,10 @@ class CountTree(object):
             self.parent = parent.parent[:]
             self.parent.insert(0, parent)
             self.prefix = parent.prefix[:]
-            self.path = self.prefix[:]
-            self.path.append(self.value)
             if parent.value != '*':
                 self.prefix.append(parent.value)
+            self.path = self.prefix[:]
+            self.path.append(self.value)
             parent.child.append(self)
             self.level = parent.level + 1
 
@@ -87,7 +87,7 @@ class CountTree(object):
         """
         return deep first traversal of count tree
         """
-        if len(self.child) == 0:
+        if self.value != '*':
             v_temp = ';'.join(self.path)
             traversal.append(v_temp)
             traversal_dict[v_temp] = self
