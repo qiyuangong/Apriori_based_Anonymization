@@ -5,7 +5,7 @@ run DA and AA with given parameters
 # coding=utf-8
 from apriori_based_anon import apriori_based_anon
 from utils.read_data import read_data, read_tree
-# from utils.make_tree import gen_even_BMS_tree
+from models.gentree import GenTree
 import sys
 import copy
 import random
@@ -21,6 +21,24 @@ def get_result_one(att_tree, data, type_alg, k=10):
     """
     run apriori_based_anon for one time, with k=10
     """
+    # data = [['a1'],
+    #          ['a1', 'a2'],
+    #          ['b1', 'b2'],
+    #          ['b1', 'b2'],
+    #          ['a1', 'a2', 'b2'],
+    #          ['a1', 'a2', 'b2'],
+    #          ['a1', 'a2', 'b1', 'b2']]
+    # att_tree = {}
+    # root = GenTree('*')
+    # att_tree['*'] = root
+    # lt = GenTree('A', root)
+    # att_tree['A'] = lt
+    # att_tree['a1'] = GenTree('a1', lt, True)
+    # att_tree['a2'] = GenTree('a2', lt, True)
+    # rt = GenTree('B', root)
+    # att_tree['B'] = rt
+    # att_tree['b1'] = GenTree('b1', rt, True)
+    # att_tree['b2'] = GenTree('b2', rt, True)
     print "K=%d" % k
     print "m=%d" % DEFALUT_M
     _, eval_result = apriori_based_anon(att_tree, data, type_alg, k)
@@ -51,7 +69,7 @@ def get_result_m(att_tree, data, type_alg, k=10):
     print "K=%d" % k
     data_back = copy.deepcopy(data)
     # for k in range(5, 105, 5):
-    for m in range(2, 10):
+    for m in range(2, 100, 5):
         print '#' * 30
         print "m=%d" % m
         result, eval_result = apriori_based_anon(att_tree, data, type_alg, k, m)
@@ -120,9 +138,12 @@ if __name__ == '__main__':
     # read generalization hierarchy
     # read record
     # remove duplicate items
-    for i in range(len(DATA)):
-        DATA[i] = list(set(DATA[i]))
-    # DATA = DATA[:15000]
+    DATA = DATA[:15000]
+    # for i in range(len(DATA)):
+    #     if len(DATA[i]) <= 40:
+    #         DATA[i] = list(set(DATA[i]))
+    #     else:
+    #         DATA[i] = list(set(DATA[i][:40]))
     # print "Begin Apriori based Anon"
     if FLAG == 'k':
         get_result_k(ATT_TREE, DATA, TYPE_ALG)

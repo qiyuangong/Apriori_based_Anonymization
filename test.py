@@ -41,6 +41,37 @@ class test_Apriori_based_Anon(unittest.TestCase):
         _, result = apriori_based_anon(ATT_TREE, trans, 'DA', 2, 2)
         self.assertEqual(result[2], {'a1': 'A', 'a2': 'A'})
 
+    def test_AA_partition_case1(self):
+        init_tree()
+        trans = [['a1'],
+                 ['a1', 'a2'],
+                 ['b1', 'b2'],
+                 ['b1', 'b2'],
+                 ['a1', 'a2', 'b2'],
+                 ['a1', 'a2', 'b2'],
+                 ['a1', 'a2', 'b1', 'b2']]
+        _, result = apriori_based_anon(ATT_TREE, trans, 'AA', 2, 4)
+        # not {'a1': 'A', 'a2': 'A', 'b1': 'B', 'b2': 'B'}
+        self.assertEqual(result[2], {'b1': 'B', 'b2': 'B'})
+        _, result = apriori_based_anon(ATT_TREE, trans, 'AA', 2, 2)
+        self.assertEqual(result[2], {'b1': 'B', 'b2': 'B'})
+
+    def test_DA_partition_case2(self):
+        init_tree()
+        trans = [['a1'],
+                 ['a1', 'a2'],
+                 ['b1', 'b2'],
+                 ['b1', 'b2'],
+                 ['a1', 'a2', 'b2'],
+                 ['a1', 'a2', 'b2'],
+                 ['a1', 'a2', 'b1', 'b2']]
+        _, result = apriori_based_anon(ATT_TREE, trans, 'DA', 2, 4)
+        # not {'a1': 'A', 'a2': 'A', 'b1': 'B', 'b2': 'B'}
+        self.assertEqual(result[2], {'b1': 'B', 'b2': 'B'})
+        _, result = apriori_based_anon(ATT_TREE, trans, 'AA', 2, 2)
+        self.assertEqual(result[2], {'b1': 'B', 'b2': 'B'})
+
+
 
 if __name__ == '__main__':
     unittest.main()

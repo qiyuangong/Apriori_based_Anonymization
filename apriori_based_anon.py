@@ -22,6 +22,7 @@ COUNT_TREE = []
 COUNT_DICT = {}
 ELEMENT_NUM = 0
 LEAF_NUM = 0
+NOT_OVERLAP = {}
 
 
 def tran_cmp(node1, node2):
@@ -155,50 +156,22 @@ def check_overlap(tran):
     """
     if len(tran) == 1:
         return False
+    vtemp = ';'.join(tran)
+    try:
+        if NOT_OVERLAP[vtemp] > 0:
+            return False
+        else:
+            return True
+    except KeyError:
+        pass
     cover_list = []
     for item in tran:
         cover_list.extend(ATT_TREE[item].cover.keys())
-    if len(cover_list) == len(set(cover_list)):
-        return False
-    return True
-    # len_tran = len(tran)
-    # for i in range(len_tran):
-    #     for j in range(len_tran):
-    #         if i == j:
-    #             continue
-    #         ancestor = [parent.value for parent in ATT_TREE[tran[j]].parent]
-    #         ancestor.append(tran[j])
-    #         if tran[i] in set(ancestor):
-    #             return True
-    # return False
-
-
-def check_cover(tran, cut):
-    """Check if tran if covered by cut (list)
-    return True if covered, False if not
-    """
-    if len(cut) == 0:
-        return False
-    cover_dict = dict()
-    for item in cut:
-        cover_dict.update(ATT_TREE[item].cover)
-    for item in tran:
-        try:
-            cover_dict[item]
-        except KeyError:
-            return False
-    return True
-    # if len(cut) == 0:
-    #     return False
-    # for temp in tran:
-    #     ancestor = [parent.value for parent in ATT_TREE[temp].parent]
-    #     ancestor.append(temp)
-    #     for item in cut:
-    #         if item in set(ancestor):
-    #             break
-    #     else:
-    #         return False
-    # return True
+        if len(cover_list) != len(set(cover_list)):
+            NOT_OVERLAP[vtemp] = 0
+            return True
+    NOT_OVERLAP[vtemp] = 1
+    return False
 
 
 def merge_cut(cut, new_cut):
@@ -240,12 +213,13 @@ def get_cut(ctree, k):
     """Given a tran, return cut making it k-anonymity with mini information
     return cut is a list e.g. ['A', 'B']
     """
+    # pdb.set_trace()
     tran = ctree.path[:]
     # get all ancestors
     ancestor = []
     for item in tran:
         parents = ATT_TREE[item].parent[:-1]
-        parents.insert(0, ATT_TREE[item])
+        # parents.insert(0, ATT_TREE[item])
         for parent in parents:
             ancestor.append(parent.value)
     ancestor = list(set(ancestor))
@@ -254,6 +228,7 @@ def get_cut(ctree, k):
     len_ance = len(ancestor)
     cuts = []
     for i in range(1, len_ance + 1):
+        cuts = []
         temp = combinations(ancestor, i)
         # convet tuple to list
         temp = [list(combination) for combination in temp]
@@ -261,20 +236,25 @@ def get_cut(ctree, k):
         for item in temp:
             if not check_overlap(item) and len(item):
                 cuts.append(item)
-    # remove cuts cannot cover tran
-    cuts = [cut for cut in cuts if check_cover(tran, cut)]
-    # sort by support, the same effect as sorting by NCP
-    for cut in cuts:
-        cut.sort(cmp=tran_cmp, reverse=True)
-    cuts.sort(cmp=cut_cmp)
-    # return
-    for cut in cuts:
-        vtemp = ';'.join(cut)
-        if COUNT_DICT[vtemp].support >= k:
-            if __DEBUG:
-                print "tran", tran
-                print "cut", cut
-            return creat_cut_dict(cut)
+        # # sort by support, the same effect as sorting by NCP
+        cuts.sort(cmp=cut_cmp)
+        # pdb.set_trace()
+        for cut in cuts:
+            gen_tran = []
+            cut_dict = creat_cut_dict(cut)
+            for item in tran:
+                try:
+                    gen_tran.append(cut_dict[item])
+                except:
+                    gen_tran.append(item)
+            gen_tran = list(set(gen_tran))
+            gen_tran.sort(cmp=tran_cmp, reverse=True)
+            vtemp = ';'.join(gen_tran)
+            if COUNT_DICT[vtemp].support >= k:
+                if __DEBUG:
+                    print "tran", tran
+                    print "cut", cut
+                return cut_dict
     # Well, Terrovitis don't metion this sitituation. I suggest suppress them.
     # print "Error: Can not find cut for %s" % tran
     return creat_cut_dict(['*'])
@@ -361,7 +341,8 @@ def AA(trans, k=10, m=4):
 
 
 def init(att_tree, data):
-    global ATT_TREE, ELEMENT_NUM, LEAF_NUM, COUNT_DICT
+    global ATT_TREE, ELEMENT_NUM, LEAF_NUM, COUNT_DICT, NOT_OVERLAP
+    NOT_OVERLAP = {}
     ELEMENT_NUM = 0
     COUNT_DICT = {}
     ATT_TREE = att_tree
@@ -402,8 +383,8 @@ def apriori_based_anon(att_tree, trans, type_alg='AA', k=10, m=4):
         ncp += rncp
     ncp /= ELEMENT_NUM
     ncp *= 100
-    # if __DEBUG:
-    list_cut = list(set(cut.values()))
-    list_cut.sort(cmp=tran_cmp, reverse=True)
-    print "Final Cut", list_cut
+    if __DEBUG:
+        list_cut = list(set(cut.values()))
+        list_cut.sort(cmp=tran_cmp, reverse=True)
+        print "Final Cut", list_cut
     return (result, (ncp, rtime, cut))
