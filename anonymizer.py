@@ -9,10 +9,12 @@ from utils.read_data import read_data, read_tree
 import sys
 import copy
 import random
+import cProfile
 
 
 DATA_SELECT = 'b'
 TYPE_ALG = 'AA'
+DEFALUT_M = 4
 
 
 def get_result_one(att_tree, data, type_alg, k=10):
@@ -20,6 +22,7 @@ def get_result_one(att_tree, data, type_alg, k=10):
     run apriori_based_anon for one time, with k=10
     """
     print "K=%d" % k
+    print "m=%d" % DEFALUT_M
     _, eval_result = apriori_based_anon(att_tree, data, type_alg, k)
     print "NCP %0.2f" % eval_result[0] + "%"
     print "Running time %0.2f" % eval_result[1] + " seconds"
@@ -31,6 +34,7 @@ def get_result_k(att_tree, data, type_alg):
     """
     data_back = copy.deepcopy(data)
     # for k in range(5, 105, 5):
+    print "m=%d" % DEFALUT_M
     for k in [2, 5, 10, 25, 50, 100]:
         print '#' * 30
         print "K=%d" % k
@@ -62,6 +66,7 @@ def get_result_dataset(att_tree, data, type_alg='AA', k=10, num_test=10):
     num_test is the test nubmber.
     """
     print "K=%d" % k
+    print "m=%d" % DEFALUT_M
     data_back = copy.deepcopy(data)
     length = len(data_back)
     joint = 5000
@@ -126,6 +131,7 @@ if __name__ == '__main__':
     elif FLAG == 'data':
         get_result_dataset(ATT_TREE, DATA, TYPE_ALG)
     elif FLAG == '':
+        # cProfile.run('get_result_one(ATT_TREE, DATA, TYPE_ALG)')
         get_result_one(ATT_TREE, DATA, TYPE_ALG)
     else:
         try:

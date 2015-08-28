@@ -19,6 +19,7 @@ __DEBUG = False
 ATT_TREE = {}
 # count tree root
 COUNT_TREE = []
+COUNT_DICT = {}
 ELEMENT_NUM = 0
 LEAF_NUM = 0
 
@@ -96,12 +97,56 @@ def init_count_tree():
     """initialize a new cout tree
     """
     # initialize count tree
+    global COUNT_DICT
+    COUNT_DICT = {}
     ctree = CountTree('*')
+    COUNT_DICT['*'] = ctree
     # just make root ctree has a none zero support
     ctree.support = ELEMENT_NUM
     for item in COUNT_TREE:
-        CountTree(item, ctree)
+        node = CountTree(item, ctree)
+        COUNT_DICT[str(node)] = node
     return ctree
+
+
+def create_count_tree(trans, m):
+    """Creat a count_tree for DA
+    """
+    ctree = init_count_tree()
+    # extend item and insert to count tree
+    for tran in trans:
+        ex_t = expand_tran(tran)
+        for i in range(1, m + 1):
+            insert_to_ctree(ex_t, i)
+    return ctree
+
+
+def insert_to_ctree(ex_t, m):
+    """
+    insert extanded tran to ctree
+    """
+    temp = combinations(ex_t, m)
+    # convet tuple to list
+    temp = [list(t) for t in temp]
+    for item in temp:
+        if not check_overlap(item) and len(item) > 0:
+            item.sort(cmp=tran_cmp, reverse=True)
+            add_to_tree(item)
+
+
+def add_to_tree(tran):
+    """
+    add to count accoding to COUNT_DICT
+    """
+    vtemp = ';'.join(tran)
+    try:
+        COUNT_DICT[vtemp]
+        COUNT_DICT[vtemp].support += 1
+    except KeyError:
+        parent_temp = COUNT_DICT[';'.join(tran[:-1])]
+        temp = CountTree(tran[-1], parent_temp)
+        COUNT_DICT[vtemp] = temp
+        temp.support += 1
 
 
 def check_overlap(tran):
@@ -171,31 +216,6 @@ def merge_cut(cut, new_cut):
             cut[item] = new_cut[item]
 
 
-def create_count_tree(trans, m):
-    """Creat a count_tree for DA
-    """
-    ctree = init_count_tree()
-    # extend item and insert to count tree
-    for tran in trans:
-        ex_t = expand_tran(tran)
-        for i in range(1, m + 1):
-            insert_to_ctree(ex_t, ctree, i)
-    return ctree
-
-
-def insert_to_ctree(ex_t, ctree, m):
-    """
-    insert extanded tran to ctree
-    """
-    temp = combinations(ex_t, m)
-    # convet tuple to list
-    temp = [list(t) for t in temp]
-    for item in temp:
-        if not check_overlap(item) and len(item) > 0:
-            item.sort(cmp=tran_cmp, reverse=True)
-            ctree.add_to_tree(item)
-
-
 def creat_cut_dict(cut):
     """
     creat cut (dict) according to cut (list)
@@ -220,7 +240,6 @@ def get_cut(ctree, k):
     """Given a tran, return cut making it k-anonymity with mini information
     return cut is a list e.g. ['A', 'B']
     """
-    c_root = ctree.parent[-1]
     tran = ctree.path[:]
     # get all ancestors
     ancestor = []
@@ -250,7 +269,8 @@ def get_cut(ctree, k):
     cuts.sort(cmp=cut_cmp)
     # return
     for cut in cuts:
-        if c_root.node(cut).support >= k:
+        vtemp = ';'.join(cut)
+        if COUNT_DICT[vtemp].support >= k:
             if __DEBUG:
                 print "tran", tran
                 print "cut", cut
@@ -265,11 +285,10 @@ def R_DA(ctree, cut, k=25, m=2):
     Re-useable DA, compute cut on ctree.
     """
     ctree_traversal = []
-    ctree_traversal_dict = {}
-    ctree.dfs_traversal(ctree_traversal, ctree_traversal_dict)
+    ctree.dfs_traversal(ctree_traversal)
     # delete_list = dict()
     for index, ctree_key in enumerate(ctree_traversal):
-        current_ctree = ctree_traversal_dict[ctree_key]
+        current_ctree = COUNT_DICT[ctree_key]
         # if len(delete_list) > 0:
         #     pdb.set_trace()
         # try:
@@ -309,7 +328,7 @@ def R_DA(ctree, cut, k=25, m=2):
     # return cut
 
 
-def DA(trans, k=10, m=3):
+def DA(trans, k=10, m=170):
     """
     Direct anonymization for transaction anonymization.
     Developed by Manolis Terrovitis
@@ -321,7 +340,7 @@ def DA(trans, k=10, m=3):
     return cut
 
 
-def AA(trans, k=10, m=3):
+def AA(trans, k=10, m=4):
     """
     Apriori-based anonymization for transaction anonymization.
     Developed by Manolis Terrovitis
@@ -334,7 +353,7 @@ def AA(trans, k=10, m=3):
     for i in range(1, m + 1):
         for tran in trans:
             ex_t = expand_tran(tran, cut)
-            insert_to_ctree(ex_t, ctree, i)
+            insert_to_ctree(ex_t, i)
         # run DA
         R_DA(ctree, cut, k, i)
         # pdb.set_trace()
@@ -342,8 +361,9 @@ def AA(trans, k=10, m=3):
 
 
 def init(att_tree, data):
-    global ATT_TREE, ELEMENT_NUM, LEAF_NUM
+    global ATT_TREE, ELEMENT_NUM, LEAF_NUM, COUNT_DICT
     ELEMENT_NUM = 0
+    COUNT_DICT = {}
     ATT_TREE = att_tree
     LEAF_NUM = len(ATT_TREE['*'])
     for tran in data:
@@ -351,7 +371,7 @@ def init(att_tree, data):
     init_gl_count_tree()
 
 
-def apriori_based_anon(att_tree, trans, type_alg='AA', k=10, m=2):
+def apriori_based_anon(att_tree, trans, type_alg='AA', k=10, m=4):
     """
     main function of apriori_based_anon
     att_tree: generalizaiton hierarchies in [dict, dict, ...] format

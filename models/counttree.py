@@ -29,8 +29,6 @@ class CountTree(object):
         self.child = []
         self.prefix = []
         self.path = []
-        self.traversal = []
-        self.traversal_dict = {}
         if value is not None:
             self.value = value
             self.path.append(value)
@@ -45,54 +43,21 @@ class CountTree(object):
             parent.child.append(self)
             self.level = parent.level + 1
 
-    def node(self, tran, prefix=[]):
+    def increase_support(self):
         """
-        Search tree with value, return cut tree node.
+        increase support of current node by 1
         """
-        index = 0
-        len_tran = len(tran)
-        for index, t in enumerate(self.child):
-            if t.value == tran[0]:
-                break
-        else:
-            print "Error can not find node"
-            index = 0
-        next_prefix = prefix[:]
-        next_prefix.append(tran[0])
-        if len_tran > 1:
-            return self.child[index].node(tran[1:], next_prefix)
-        else:
-            return self.child[index]
+        self.support += 1
 
-    def add_to_tree(self, tran, prefix=[]):
-        """
-        Add combiation to count tree, add prefix to node
-        """
-        index = 0
-        len_tran = len(tran)
-        for index, t in enumerate(self.child):
-            if t.value == tran[0]:
-                break
-        else:
-            CountTree(tran[0], self)
-            index = -1
-        next_prefix = prefix[:]
-        next_prefix.append(tran[0])
-        if len_tran > 1:
-            self.child[index].add_to_tree(tran[1:], next_prefix)
-        else:
-            self.child[index].support += 1
-
-    def dfs_traversal(self, traversal, traversal_dict):
+    def dfs_traversal(self, traversal):
         """
         return deep first traversal of count tree
         """
         if self.value != '*':
             v_temp = ';'.join(self.path)
             traversal.append(v_temp)
-            traversal_dict[v_temp] = self
         for child in self.child:
-            child.dfs_traversal(traversal, traversal_dict)
+            child.dfs_traversal(traversal)
 
     def print_tree(self):
         """
@@ -101,3 +66,15 @@ class CountTree(object):
         print "prefix %s" % self.prefix
         for t in self.child:
             print t.value,
+
+    def __len__(self):
+        """
+        return support of current node
+        """
+        return self.support
+
+    def __str__(self):
+        """
+        return print
+        """
+        return ';'.join(self.path)
