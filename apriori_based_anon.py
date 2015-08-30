@@ -189,7 +189,7 @@ def merge_cut(cut, new_cut):
             cut[item] = new_cut[item]
 
 
-def creat_cut_dict(cut):
+def get_cut_dict(cut):
     """
     creat cut (dict) according to cut (list)
     """
@@ -241,7 +241,7 @@ def get_cut(ctree, k):
         # pdb.set_trace()
         for cut in cuts:
             gen_tran = []
-            cut_dict = creat_cut_dict(cut)
+            cut_dict = get_cut_dict(cut)
             for item in tran:
                 try:
                     gen_tran.append(cut_dict[item])
@@ -257,7 +257,7 @@ def get_cut(ctree, k):
                 return cut_dict
     # Well, Terrovitis don't metion this sitituation. I suggest suppress them.
     # print "Error: Can not find cut for %s" % tran
-    return creat_cut_dict(['*'])
+    return get_cut_dict(['*'])
 
 
 def R_DA(ctree, cut, k=25, m=2):

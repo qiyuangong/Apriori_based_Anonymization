@@ -15,31 +15,15 @@ import cProfile
 DATA_SELECT = 'b'
 TYPE_ALG = 'AA'
 DEFALUT_M = 4
+M_MAX = 161
 
 
 def get_result_one(att_tree, data, type_alg, k=10):
     """
     run apriori_based_anon for one time, with k=10
     """
-    # data = [['a1'],
-    #          ['a1', 'a2'],
-    #          ['b1', 'b2'],
-    #          ['b1', 'b2'],
-    #          ['a1', 'a2', 'b2'],
-    #          ['a1', 'a2', 'b2'],
-    #          ['a1', 'a2', 'b1', 'b2']]
-    # att_tree = {}
-    # root = GenTree('*')
-    # att_tree['*'] = root
-    # lt = GenTree('A', root)
-    # att_tree['A'] = lt
-    # att_tree['a1'] = GenTree('a1', lt, True)
-    # att_tree['a2'] = GenTree('a2', lt, True)
-    # rt = GenTree('B', root)
-    # att_tree['B'] = rt
-    # att_tree['b1'] = GenTree('b1', rt, True)
-    # att_tree['b2'] = GenTree('b2', rt, True)
     print "K=%d" % k
+    print "Size of Data", len(data)
     print "m=%d" % DEFALUT_M
     _, eval_result = apriori_based_anon(att_tree, data, type_alg, k)
     print "NCP %0.2f" % eval_result[0] + "%"
@@ -53,7 +37,8 @@ def get_result_k(att_tree, data, type_alg):
     data_back = copy.deepcopy(data)
     # for k in range(5, 105, 5):
     print "m=%d" % DEFALUT_M
-    for k in [2, 5, 10, 25, 50, 100]:
+    print "Size of Data", len(data)
+    for k in [2, 5, 10, 25, 50]:
         print '#' * 30
         print "K=%d" % k
         result, eval_result = apriori_based_anon(att_tree, data, type_alg, k)
@@ -67,9 +52,10 @@ def get_result_m(att_tree, data, type_alg, k=10):
     change k, whle fixing size of dataset
     """
     print "K=%d" % k
+    print "Size of Data", len(data)
     data_back = copy.deepcopy(data)
-    # for k in range(5, 105, 5):
-    for m in range(2, 100, 5):
+    # for m in range(1, 100, 5):
+    for m in [1, 2, 3, 4, 5, M_MAX]:
         print '#' * 30
         print "m=%d" % m
         result, eval_result = apriori_based_anon(att_tree, data, type_alg, k, m)
@@ -144,6 +130,8 @@ if __name__ == '__main__':
     #         DATA[i] = list(set(DATA[i]))
     #     else:
     #         DATA[i] = list(set(DATA[i][:40]))
+    for i in range(len(DATA)):
+        DATA[i] = list(set(DATA[i]))
     # print "Begin Apriori based Anon"
     if FLAG == 'k':
         get_result_k(ATT_TREE, DATA, TYPE_ALG)
