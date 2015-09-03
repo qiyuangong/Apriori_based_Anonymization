@@ -15,10 +15,11 @@ import cProfile
 DATA_SELECT = 'b'
 TYPE_ALG = 'AA'
 DEFALUT_M = 4
+DEFALUT_K = 100
 M_MAX = 161
 
 
-def get_result_one(att_tree, data, type_alg, k=10):
+def get_result_one(att_tree, data, type_alg, k=DEFALUT_K):
     """
     run apriori_based_anon for one time, with k=10
     """
@@ -47,7 +48,7 @@ def get_result_k(att_tree, data, type_alg):
         print "Running time %0.2f" % eval_result[1] + " seconds"
 
 
-def get_result_m(att_tree, data, type_alg, k=10):
+def get_result_m(att_tree, data, type_alg, k=DEFALUT_K):
     """
     change k, whle fixing size of dataset
     """
@@ -64,7 +65,7 @@ def get_result_m(att_tree, data, type_alg, k=10):
         print "Running time %0.2f" % eval_result[1] + " seconds"
 
 
-def get_result_dataset(att_tree, data, type_alg='AA', k=10, num_test=10):
+def get_result_dataset(att_tree, data, type_alg='AA', k=DEFALUT_K, num_test=10):
     """
     fix k, while changing size of dataset
     num_test is the test nubmber.
@@ -124,7 +125,7 @@ if __name__ == '__main__':
     # read generalization hierarchy
     # read record
     # remove duplicate items
-    DATA = DATA[:15000]
+    # DATA = DATA[:1000]
     # for i in range(len(DATA)):
     #     if len(DATA[i]) <= 40:
     #         DATA[i] = list(set(DATA[i]))
@@ -140,8 +141,8 @@ if __name__ == '__main__':
     elif FLAG == 'data':
         get_result_dataset(ATT_TREE, DATA, TYPE_ALG)
     elif FLAG == '':
-        # cProfile.run('get_result_one(ATT_TREE, DATA, TYPE_ALG)')
-        get_result_one(ATT_TREE, DATA, TYPE_ALG)
+        cProfile.run('get_result_one(ATT_TREE, DATA, TYPE_ALG)')
+        # get_result_one(ATT_TREE, DATA, TYPE_ALG)
     else:
         try:
             INPUT_K = int(FLAG)
